@@ -218,6 +218,12 @@ func proxyEnv(proxyAddr, caCert string) []string {
 			"REQUESTS_CA_BUNDLE="+caCert,
 			"GIT_SSL_CAINFO="+caCert,
 			"NODE_EXTRA_CA_CERTS="+caCert,
+			// Browsers launched by playwright-cli (Chromium) do honor HTTP(S)_PROXY, so
+			// their traffic reaches the recording MITM, but they trust only their own
+			// NSS store, never the CA vars above — every HTTPS page then fails with
+			// ERR_CERT_AUTHORITY_INVALID. The CLI reads this from the environment;
+			// the certificates it skips verifying are the MITM's re-signed ones.
+			"PLAYWRIGHT_MCP_IGNORE_HTTPS_ERRORS=true",
 		)
 	}
 	return env

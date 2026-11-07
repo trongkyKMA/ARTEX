@@ -1,10 +1,18 @@
 ---
 name: playwright-cli
-description: Automate browser interactions, test web pages and work with Playwright tests.
+description: Drive a real headless browser (Chromium) from Bash. Use when a web target needs a browser rather than curl - JavaScript-rendered/SPA pages, login or multi-step flows, verifying DOM/reflected XSS or client-side behaviour, clickjacking/CSP checks, inspecting cookies/localStorage, or capturing a page snapshot/screenshot as evidence. Also complements api-recon's coverage mode.
 allowed-tools: Bash(playwright-cli:*) Bash(npx:*) Bash(npm:*)
 ---
 
 # Browser Automation with playwright-cli
+
+## Using it inside ARTEX
+
+- Already installed in the ARTEX Docker image with Chromium as the default browser: just run `playwright-cli open <url>` (headless). No `npx`/install step is needed.
+- When traffic capture is on, the browser's requests go through the recording proxy (so they show up as evidence for `traffic_search`/`bind_finding_traffic`), and HTTPS certificate errors from that proxy are ignored automatically.
+- Prefer `snapshot` over `screenshot` (text is cheaper than images); use `screenshot` only when an image is the evidence.
+- Always `playwright-cli close` when done so the background browser does not keep running.
+- Platform rules still apply: no credential/OTP brute force, no password changes, no destructive actions through the browser.
 
 ## Quick start
 

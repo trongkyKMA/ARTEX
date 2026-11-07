@@ -95,6 +95,22 @@ Lưu ý: frontend production là bản **static export** nhúng vào binary Go. 
 
 Khi skill được bật cho một agent, MCP ScopeSentry (nếu đã cấu hình và bật) sẽ tự kết nối và mở khoá tool lúc skill được gọi. Skill vẫn tắt mặc định, như trước.
 
+### Sửa skill `playwright-cli` để dùng được ngay
+
+Đã chạy thử trong image Docker và phát hiện 3 vấn đề khiến skill không dùng được:
+
+| Vấn đề | Hậu quả | Cách sửa |
+|---|---|---|
+| CLI mặc định dùng Google Chrome (`/opt/google/chrome`), nhưng image chỉ cài Chromium | `playwright-cli open` lỗi ngay ở bước đầu | `Dockerfile`: `ENV PLAYWRIGHT_MCP_BROWSER=chromium` |
+| CLI đi kèm `playwright-core` riêng, cần Chromium bản 1252, trong khi gói `playwright` cài bản 1254 | Báo "browser is not installed" | `Dockerfile`: thêm `playwright-cli install-browser chromium` |
+| Khi bật ghi traffic, Chromium đi qua proxy MITM nhưng không tin CA của proxy (chỉ curl/python/node đọc các biến CA) | Mọi trang HTTPS báo `ERR_CERT_AUTHORITY_INVALID` | `agent/worker.go: proxyEnv` thêm `PLAYWRIGHT_MCP_IGNORE_HTTPS_ERRORS=true`, **chỉ khi** proxy ghi traffic đang bật |
+
+Sau khi sửa, `playwright-cli open https://…` tải được trang, **và traffic của trình duyệt được ghi vào kho bằng chứng** (dùng được với `traffic_search`/`bind_finding_traffic`).
+
+Ngoài ra:
+- Mô tả skill được viết lại theo tình huống pentest: SPA, luồng đăng nhập, XSS phía client, cookie/CSP, bằng chứng. Đầu `SKILL.md` có thêm mục "Using it inside ARTEX".
+- Skill được gán **một lần** cho Worker và Pentest khi cài mới (`seedPlaywrightSkillVisibilityV1`, cờ `skill_visibility_playwright_v1`). Anh tắt đi thì lần khởi động sau không tự bật lại.
+
 ### Mở rộng mô tả skill `api-recon`
 
 Mô tả gốc ("收集网站API接口时调用该skill。") quá hẹp, nên agent ít khi gọi skill này. Mô tả mới (vẫn tiếng Trung, 380 byte) nêu rõ:

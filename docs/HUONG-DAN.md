@@ -166,7 +166,7 @@ Skill là bộ hướng dẫn và script mà agent tự nạp khi gặp việc p
 | Skill | Mặc định gán cho | Dùng để | Điều kiện |
 |---|---|---|---|
 | `api-recon` | Worker, Pentest, Auto | Thu thập API endpoint, route, tham số của web app (tĩnh từ JS bundle + chạy Chrome headless) | Chạy tốt nhất trong Docker image |
-| `playwright-cli` | (tắt) | Điều khiển trình duyệt: click, điền form, chụp ảnh | Cần `playwright-cli` + Chromium. Image Docker có sẵn. Khuyến nghị bật cho **Worker**, **Pentest** |
+| `playwright-cli` | Worker, Pentest (gán một lần khi cài mới) | Điều khiển trình duyệt headless: trang SPA/JS, luồng đăng nhập nhiều bước, xác minh XSS phía client, kiểm tra cookie/localStorage, chụp snapshot làm bằng chứng | Image Docker có sẵn, cùng Chromium đúng phiên bản. Khi bật ghi traffic, request của trình duyệt được ghi làm bằng chứng và lỗi chứng chỉ của proxy được bỏ qua tự động |
 | `scopesentry` | (tắt) | Lấy asset từ nền tảng ScopeSentry qua MCP | Cần instance ScopeSentry; cấu hình ở **Asset sync** |
 
 Lưu ý:
@@ -174,6 +174,10 @@ Lưu ý:
 - Mô tả skill (`description` trong `SKILL.md`) bị cắt ở **500 byte**. Tiếng Trung chiếm 3 byte/ký tự, nên giữ mô tả dưới khoảng 160 ký tự.
 - Sửa file skill trong `./skills` có hiệu lực ở lượt chạy kế tiếp của agent, không cần khởi động lại.
 - Script của `api-recon` dùng `puppeteer-core` 23, đang có lỗ hổng đã công bố (mức độ thấp với cách dùng hiện tại). Nên nâng lên v25 khi có thời gian test lại.
+- **`playwright-cli` khi chạy trực tiếp (không Docker):**
+  - Cài `npm i -g @playwright/cli` rồi `playwright-cli install-browser chromium`.
+  - Đặt biến môi trường `PLAYWRIGHT_MCP_BROWSER=chromium` cho process ARTEX. Nếu không, CLI tìm Google Chrome ở `/opt/google/chrome` và báo lỗi.
+- Kiểm tra nhanh trong container: `docker compose exec artex playwright-cli open https://example.com`, rồi `playwright-cli snapshot`, rồi `playwright-cli close`.
 
 ---
 

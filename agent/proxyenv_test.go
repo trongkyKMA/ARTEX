@@ -28,7 +28,7 @@ func TestProxyEnvSetsAllProxyForSocks5(t *testing.T) {
 			t.Errorf("proxyEnv missing %s: %v", want, env)
 		}
 	}
-	if has("SSL_CERT_FILE=") || has("CURL_CA_BUNDLE=") {
+	if has("SSL_CERT_FILE=") || has("CURL_CA_BUNDLE=") || has("PLAYWRIGHT_MCP_IGNORE_HTTPS_ERRORS=") {
 		t.Errorf("proxyEnv without CA must not inject CA vars: %v", env)
 	}
 }
@@ -43,7 +43,7 @@ func TestProxyEnvInjectsCAWhenRecording(t *testing.T) {
 		}
 		return false
 	}
-	for _, want := range []string{"SSL_CERT_FILE=", "CURL_CA_BUNDLE=", "REQUESTS_CA_BUNDLE=", "NODE_EXTRA_CA_CERTS="} {
+	for _, want := range []string{"SSL_CERT_FILE=", "CURL_CA_BUNDLE=", "REQUESTS_CA_BUNDLE=", "NODE_EXTRA_CA_CERTS=", "PLAYWRIGHT_MCP_IGNORE_HTTPS_ERRORS=true"} {
 		if !has(want) {
 			t.Errorf("proxyEnv with CA missing %s: %v", want, env)
 		}

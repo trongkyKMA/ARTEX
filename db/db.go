@@ -270,6 +270,9 @@ ON CONFLICT (name) DO NOTHING`,
 	if err := d.seedBuiltinSkillVisibility(); err != nil {
 		return fmt.Errorf("seed skill visibility: %w", err)
 	}
+	if err := d.seedPlaywrightSkillVisibilityV1(); err != nil {
+		return fmt.Errorf("seed playwright-cli skill visibility: %w", err)
+	}
 	if err := d.seedDefaultInterceptRules(); err != nil {
 		return fmt.Errorf("seed intercept rules: %w", err)
 	}
@@ -320,8 +323,9 @@ ON CONFLICT DO NOTHING`, r.kind, r.pattern, r.note); err != nil {
 // builtinSkillVisibility maps a shipped skill's directory name → the built-in
 // agent keys that should see it by default. The skill FILES themselves live on the
 // filesystem (SkillDir, loaded by norma at runtime); DB only carries this visibility
-// binding. Skills omitted here (e.g. playwright-cli, scopesentry) ship invisible by
-// default — the user turns them on per-agent when needed. scopesentry additionally
+// binding. Skills omitted here ship invisible by default — the user turns them on
+// per-agent when needed (playwright-cli is bound once to worker/pentest by
+// seedPlaywrightSkillVisibilityV1 instead, so a later toggle-off sticks). scopesentry additionally
 // declares `mcps: ScopeSentry`, which only takes effect once it's made visible and
 // that MCP is enabled/configured.
 var builtinSkillVisibility = map[string][]string{
@@ -343,6 +347,28 @@ ON CONFLICT (agent_id, skill_name) DO NOTHING`, key, skillName); err != nil {
 		}
 	}
 	return nil
+}
+
+// seedPlaywrightSkillVisibilityV1 binds the playwright-cli skill to the agents that
+// actually drive targets (worker, pentest) — once per database, gated by a settings
+// flag. Unlike the always-run builtinSkillVisibility map, an operator who later
+// turns the skill off for an agent (which deletes the row) does not get it back on
+// the next restart. The Docker image ships playwright-cli with a matching Chromium;
+// on hosts without it the agent simply gets a "command not found" and moves on.
+func (d *DB) seedPlaywrightSkillVisibilityV1() error {
+	const flag = "skill_visibility_playwright_v1"
+	if v, _, _ := d.GetSetting(flag); v == "done" {
+		return nil
+	}
+	for _, key := range []string{"worker", "pentest"} {
+		if _, err := d.Exec(`
+INSERT INTO agent_skill_visibility(agent_id, skill_name, enabled)
+SELECT id, 'playwright-cli', true FROM agents WHERE key=$1
+ON CONFLICT (agent_id, skill_name) DO NOTHING`, key); err != nil {
+			return fmt.Errorf("skill playwright-cli → agent %s: %w", key, err)
+		}
+	}
+	return d.SetSetting(flag, "done")
 }
 
 // seedDefaultInterceptRules inserts built-in safety intercept rules once on
