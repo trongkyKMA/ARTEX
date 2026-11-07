@@ -191,6 +191,7 @@ Lưu ý:
 - **`playwright-cli` khi chạy trực tiếp (không Docker):**
   - Cài `npm i -g @playwright/cli` rồi `playwright-cli install-browser chromium`.
   - Đặt biến môi trường `PLAYWRIGHT_MCP_BROWSER=chromium` cho process ARTEX. Nếu không, CLI tìm Google Chrome ở `/opt/google/chrome` và báo lỗi.
+- **`api-recon` khi chạy trực tiếp (không Docker):** pha runtime (`runtime_harvest.js`) mặc định tìm trình duyệt ở `/usr/bin/chromium`. Nếu máy không có, đặt biến `CHROMIUM=<đường dẫn tới chrome>` cho process ARTEX (hoặc khoá `"chromium"` trong config của skill). Image Docker đã tạo sẵn `/usr/bin/chromium` trỏ tới Chromium của Playwright.
 - Kiểm tra nhanh trong container: `docker compose exec artex playwright-cli open https://example.com`, rồi `playwright-cli snapshot`, rồi `playwright-cli close`.
 
 ---

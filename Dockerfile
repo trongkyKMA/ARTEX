@@ -36,6 +36,14 @@ RUN npm install -g @playwright/mcp@latest @playwright/cli@latest playwright@late
 # fetches the revision the CLI expects; this makes it the CLI's default browser so
 # `playwright-cli open <url>` works without extra flags.
 ENV PLAYWRIGHT_MCP_BROWSER=chromium
+# Skills that drive Chromium directly via puppeteer-core (e.g. api-recon's
+# runtime_harvest.js) default to /usr/bin/chromium. Point it at the Chromium that
+# Playwright downloaded above so they work without extra configuration.
+RUN CHROME="$(ls -d /root/.cache/ms-playwright/chromium-*/chrome-linux*/chrome | sort -V | tail -1)" \
+    && test -x "$CHROME" \
+    && ln -sf "$CHROME" /usr/bin/chromium \
+    && /usr/bin/chromium --version
+ENV CHROMIUM=/usr/bin/chromium
 WORKDIR /app
 # 预编译好的对应架构二进制（dist/amd64/artex 或 dist/arm64/artex）
 COPY dist/${TARGETARCH}/artex /app/artex
