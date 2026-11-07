@@ -55,7 +55,7 @@ Ngày: 2026-11-07 · Phạm vi: toàn bộ source `ARTEX-main` (Go backend + Nex
 
 ### Chi tiết các fix
 
-1. **Setup token** (`server/auth_guard.go`, `server/auth.go: authInit`): khi chưa có mật khẩu admin, server sinh token ngẫu nhiên một lần (hoặc lấy từ env `ARTEX_SETUP_TOKEN`), in ra log và ghi vào `<BaseDir>/setup.token` (quyền 0600). `POST /api/auth/init` bắt buộc gửi `setup_token`, so sánh constant-time. Token bị huỷ sau khi setup thành công. Trang `/setup` có thêm ô "Setup token".
+1. **Setup token** (`server/auth_guard.go`, `server/auth.go: authInit`): khi chưa có mật khẩu admin, server sinh token ngẫu nhiên một lần (hoặc lấy từ env `ARTEX_SETUP_TOKEN`), in ra log và ghi vào `<keyDir>/setup.token` (quyền 0600; `keyDir` mặc định là thư mục chứa file thực thi, đổi bằng env `ARTEX_KEY_DIR` — Docker dùng `/app/keys`, mount từ `./keys`). `POST /api/auth/init` bắt buộc gửi `setup_token`, so sánh constant-time. Token bị huỷ sau khi setup thành công. Trang `/setup` có thêm ô "Setup token".
    **CORS** (`server/server.go: cors`): bỏ `*`. Chỉ trả `Access-Control-Allow-Origin` cho các origin trong `ARTEX_CORS_ORIGINS` (mặc định rỗng, production chạy same-origin). `dev.sh` tự set origin cho `next dev`.
 2. **Bỏ cookie auth** (`extractToken`): backend chỉ nhận `Authorization: Bearer`. Frontend không ghi JWT vào cookie nữa, chỉ ghi cờ `artex_authed=1` (SameSite=Strict) cho middleware điều hướng. Cookie cũ vẫn được middleware chấp nhận để phiên hiện tại không bị vòng lặp redirect.
 3. **Rate limit** (`loginLimiter`): sau 5 lần sai trong 15 phút từ cùng IP thì trả 429. Áp dụng cho login, change-password (mật khẩu cũ) và setup token. Lưu ý: nếu đặt sau reverse proxy thì mọi client chung IP proxy.
@@ -175,7 +175,7 @@ Rà soát cơ chế intercept (`guard/`, `intercept/`) tìm ra các đường m�
 ## 3. Ảnh hưởng vận hành (cần thông báo cho người dùng)
 
 - **Cài mới:** lấy setup token trước khi mở `/setup`:
-  - Docker: `docker compose logs artex | grep "setup token"` hoặc `docker compose exec artex cat /app/setup.token`
+  - Docker: `docker compose logs artex | grep "setup token"` hoặc `docker compose exec artex cat /app/keys/setup.token`
   - Chạy binary: file `setup.token` nằm cạnh file thực thi.
   - Tự động hoá: đặt sẵn env `ARTEX_SETUP_TOKEN`.
 - **Chạy dev (`next dev`)** từ origin khác `localhost:3000/5173`: set `ARTEX_CORS_ORIGINS=http://<host>:<port>`.

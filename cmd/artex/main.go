@@ -112,7 +112,7 @@ func run() int {
 		skillDir = abs
 	}
 	log.Printf("[config] skill directory: %s", skillDir)
-	srv := server.New(ctx, mgr, skillDir, *dataDir, config.BaseDir())
+	srv := server.New(ctx, mgr, skillDir, *dataDir, keyDir())
 	httpSrv := &http.Server{
 		Addr:              *addr,
 		Handler:           srv.Handler(),
@@ -157,4 +157,24 @@ func shutdownContext(signalCtx context.Context) (context.Context, context.Cancel
 		}
 	}()
 	return ctx, shutdown
+}
+
+// keyDir is where jwt.key and setup.token live. Default: the base dir next to the
+// executable (outside the browsable data/ workspace, so the signing key cannot be
+// listed or downloaded through the file manager). ARTEX_KEY_DIR overrides it, e.g.
+// a dedicated volume in Docker so the key survives container re-creation and users
+// stay logged in across upgrades.
+func keyDir() string {
+	d := os.Getenv("ARTEX_KEY_DIR")
+	if d == "" {
+		return config.BaseDir()
+	}
+	if abs, err := filepath.Abs(d); err == nil {
+		d = abs
+	}
+	if err := os.MkdirAll(d, 0o700); err != nil {
+		log.Fatalf("create key dir %s: %v", d, err)
+	}
+	log.Printf("[config] key directory: %s", d)
+	return d
 }

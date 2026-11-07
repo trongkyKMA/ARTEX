@@ -95,7 +95,7 @@ docker compose logs -f artex     # xem log, Ctrl-C để thoát
   - đặt `ARTEX_IMAGE`/`ARTEX_TAG` tương ứng trong `.env` trên server.
 - Build cho ARM: `ARTEX_ARCH=arm64 ./docker-build.sh`.
 - Sau khi đổi `package-lock.json` (nâng thư viện frontend), chạy `ARTEX_NPM_CI=1 ./docker-build.sh` để cài lại dependency.
-- **Dữ liệu được giữ lại** khi tạo lại container: volume `pgdata` (database), thư mục `./data` (traffic, evidence, file làm việc của task), `./skills`.
+- **Dữ liệu được giữ lại** khi tạo lại container: volume `pgdata` (database), thư mục `./data` (traffic, evidence, file làm việc của task), `./keys` (khoá ký JWT và setup token, giữ lại nên không phải đăng nhập lại sau khi cập nhật), `./skills`. Nên sao lưu `./keys` cùng `./data`; xoá `./keys` chỉ làm mọi người phải đăng nhập lại.
 - **Cổng** (chỉnh trong `.env`, không cần sửa `docker-compose.yml`):
   - `ARTEX_HTTP_PORT` (mặc định `8787`): giao diện + API.
   - `ARTEX_BIND` (mặc định `0.0.0.0`, tức mọi interface): đặt `127.0.0.1` để chỉ truy cập được từ chính máy đó, rồi đặt reverse proxy phía trước (§10).
@@ -135,7 +135,7 @@ CGO_ENABLED=0 go build -tags embedui -o artex ./cmd/artex
 
 1. Mở **http://<máy-chủ>:8787**. Trang tự chuyển tới `/setup`.
 2. Lấy **Setup token** (token dùng một lần, chống người khác chiếm quyền admin trước bạn):
-   - Docker: `docker compose logs artex | grep "setup token"` hoặc `docker compose exec artex cat /app/setup.token`
+   - Docker: `docker compose logs artex | grep "setup token"` hoặc `docker compose exec artex cat /app/keys/setup.token`
    - Chạy trực tiếp: file `setup.token` nằm cạnh file `artex`, hoặc xem dòng `[auth] … setup token …` trong log.
    - Muốn tự đặt trước: biến `ARTEX_SETUP_TOKEN` trong `.env`.
 3. Nhập token, đặt mật khẩu (≥ 8 ký tự). Token tự huỷ sau khi dùng.
