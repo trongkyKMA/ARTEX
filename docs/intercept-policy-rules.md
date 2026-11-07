@@ -13,7 +13,7 @@ Rule chỉ chặn đúng hành vi bị cấm, **không chặn kỹ thuật kiể
 - Crack hash offline bằng `hashcat`/`john`.
 - Gửi một request OTP; trinh sát (GET) trang reset mật khẩu.
 
-Toàn bộ rule đã được chạy thử bằng engine regex RE2 của Go (đúng engine ARTEX dùng), trên input JSON y hệt dạng interceptor nhận được. Kết quả **45/45 ca đúng** (xem phần cuối).
+Toàn bộ rule đã được chạy thử bằng engine regex RE2 của Go (đúng engine ARTEX dùng), trên input JSON y hệt dạng interceptor nhận được. Kết quả **51/51 ca đúng** (xem phần cuối).
 
 ## Rule được cài tự động
 
@@ -23,7 +23,7 @@ Toàn bộ rule đã được chạy thử bằng engine regex RE2 của Go (đ�
 - **Không ghi đè thay đổi của anh:** rule nào đã có (trùng tên) thì bỏ qua. Rule mặc định nào anh đã sửa thì không bị đụng tới.
 - **Kiểm tra:** vào **System → Intercept rules**, phải thấy 11 rule tên bắt đầu bằng `[Policy]`, đang bật.
 - **Bật/tắt/sửa/xoá:** làm trực tiếp trên trang đó, có hiệu lực ngay.
-- **Đổi bộ rule cho cài mới:** sửa `db/policy_rules.json`, chạy `go test ./db/ -run TestPolicyRulesBehaviour` (45 ca), rồi build lại.
+- **Đổi bộ rule cho cài mới:** sửa `db/policy_rules.json`, chạy `go test ./db/ -run TestPolicyRulesBehaviour` (51 ca), rồi build lại.
   - Với DB đã cài, sửa trên UI. Migration không chạy lại.
   - Nếu xoá rule trên UI rồi muốn cài lại, xoá dòng `intercept_policy_rules_v4` trong bảng `settings` rồi khởi động lại server.
 - **Ghi thẳng vào DB** (không qua UI/API): server giữ rule trong bộ nhớ đệm. Gạt tắt rồi bật lại một rule bất kỳ trên UI để server nạp lại.
@@ -119,7 +119,7 @@ Pattern:
 Pattern:
 
 ```
-(?i)(?:^|[^a-z0-9])(?:otp|totp|2fa|mfa|sms_?code|verify_?code|verification_?code|one.?time)(?:[^a-z0-9]|$)[\s\S]{0,500}?(?:\bseq\s+-?w?\s*\d|range\s*\(\s*\d|\{\d+\.\.\d+\}|\bfor\s+\w+\s+in\b|\bwhile\b|\bxargs\b|\bparallel\b|itertools\.product|\s-w\s)|(?:\bseq\s+-?w?\s*\d|range\s*\(\s*\d|\{\d+\.\.\d+\}|\bfor\s+\w+\s+in\b|\bwhile\b|\bxargs\b|\bparallel\b|itertools\.product)[\s\S]{0,500}?(?:^|[^a-z0-9])(?:otp|totp|2fa|mfa|sms_?code|verify_?code|verification_?code|one.?time)(?:[^a-z0-9]|$)
+(?i)(?:^|[^a-z0-9])(?:otp|totp|2fa|mfa|sms_?code|verify_?code|verification_?code|one.?time)(?:[^a-z0-9]|$)[\s\S]{0,500}?(?:\bseq\s+(?:-[a-z]+\s+)*(?:\d+\s+)?\d{3,}|range\s*\(\s*(?:\d+\s*,\s*)?\d{3,}|\{\d+\.\.\d{3,}\}|itertools\.product|%0[4-9]d|\{\w*:0[4-9]d?\}|\.zfill\(\s*[4-9]|\bcrunch\s+[4-9])|(?:\bseq\s+(?:-[a-z]+\s+)*(?:\d+\s+)?\d{3,}|range\s*\(\s*(?:\d+\s*,\s*)?\d{3,}|\{\d+\.\.\d{3,}\}|itertools\.product|%0[4-9]d|\{\w*:0[4-9]d?\}|\.zfill\(\s*[4-9]|\bcrunch\s+[4-9])[\s\S]{0,500}?(?:^|[^a-z0-9])(?:otp|totp|2fa|mfa|sms_?code|verify_?code|verification_?code|one.?time)(?:[^a-z0-9]|$)
 ```
 
 ### 6. [Policy] Change password - OS commands
@@ -230,7 +230,7 @@ Pattern mới cho `[Built-in] Destructive system commands`, giữ nguyên các p
 
 Các rule mặc định khác giữ nguyên: HTTP `DELETE`, SQL `DROP`/`TRUNCATE`, Redis `FLUSHALL`, `mkfs`, `dd`, `shutdown`…
 
-## Kết quả kiểm thử (45/45)
+## Kết quả kiểm thử (51/51)
 
 | Tiêu chí | Bị chặn (đúng) | Được phép (đúng) |
 |---|---|---|

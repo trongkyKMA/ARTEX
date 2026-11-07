@@ -327,7 +327,7 @@ Hoặc thủ công: `git pull && ./docker-build.sh && docker compose up -d`.
 ```bash
 go build ./... && go vet ./...
 ARTEX_PG_DSN='postgres://artex:pass@127.0.0.1:5432/artex_test?sslmode=disable' go test -p 1 ./...
-go test ./db/ -run TestPolicyRulesBehaviour      # 45 ca của bộ rule chính sách
+go test ./db/ -run TestPolicyRulesBehaviour      # 51 ca của bộ rule chính sách
 cd web && npx tsc --noEmit && node --test src/lib/*.test.mjs
 ```
 

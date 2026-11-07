@@ -1,10 +1,21 @@
 package db
 
 import (
+	"bytes"
 	"encoding/json"
 	"regexp"
 	"testing"
 )
+
+// toolInput encodes a Bash tool input the way the interceptor's canonical form
+// does (intercept.canonicalInput): JSON without HTML escaping, so "&" stays "&".
+func toolInput(cmd string) []byte {
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
+	enc.SetEscapeHTML(false)
+	_ = enc.Encode(map[string]string{"command": cmd})
+	return bytes.TrimRight(buf.Bytes(), "\n")
+}
 
 // TestPolicyRulesBehaviour checks the embedded operator-policy rules (policy_rules.json)
 // against the allow/deny cases they were designed for, evaluated like the
@@ -53,6 +64,14 @@ func TestPolicyRulesBehaviour(t *testing.T) {
 		{false, `nmap -sV -sC -p- 10.0.0.5`},
 		{false, `curl -s https://t/api/otp/send -d '{"phone":"0900000000"}'`},
 		{false, `echo a92fa1 | sha256sum; for h in a b c; do ping -c1 $h; done`},
+		// Endpoint discovery: a path list that happens to contain /api/otp, looped with
+		// curl (false positive seen in a live run with the v4 OTP rule).
+		{false, "PATHS=(/api/bank /api/payment /api/customer /api/otp /api/upload)\nfor p in \"${PATHS[@]}\"; do curl -sk -m 10 \"$TARGET$p\"; done"},
+		{false, "words = ['auth', 'customer', 'payment', 'otp']\nfor w in words:\n    for m in ('PUT', 'DELETE', 'OPTIONS'):\n        probe(base + '/api/' + w, m)"},
+		{false, "for i in range(3):\n    r = requests.get(base + '/api/otp/config')"},
+		{true, `for i in {0000..9999}; do curl -s -d "pin=$i&otp=$i" https://t/verify; done`},
+		{true, "import itertools\nfor c in itertools.product('0123456789', repeat=6):\n    requests.post('https://t/mfa', data={'otp': ''.join(c)})"},
+		{true, "for i in range(0, 1000000):\n    s.post(u, data={'verify_code': str(i).zfill(6)})"},
 		// 2. password change
 		{true, `passwd root`},
 		{true, `echo 'admin:NewPass1' | chpasswd`},
@@ -86,7 +105,7 @@ func TestPolicyRulesBehaviour(t *testing.T) {
 		{false, `curl -s https://t/download?file=../../etc/passwd`},
 	}
 	for _, c := range cases {
-		in, _ := json.Marshal(map[string]string{"command": c.cmd})
+		in := toolInput(c.cmd)
 		hit := ""
 		for i, re := range res {
 			if re.Match(in) {
@@ -103,7 +122,7 @@ func TestPolicyRulesBehaviour(t *testing.T) {
 		}
 	}
 	for _, root := range []string{`rm -rf /`, `sudo rm -rf /*`, `rm -rf / --no-preserve-root`} {
-		in, _ := json.Marshal(map[string]string{"command": root})
+		in := toolInput(root)
 		if !narrowed.Match(in) {
 			t.Errorf("narrowed destructive rule must still block %q", root)
 		}

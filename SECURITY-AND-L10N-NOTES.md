@@ -136,8 +136,13 @@ Rà soát cơ chế intercept (`guard/`, `intercept/`) tìm ra các đường m�
 - **3 tiêu chí:** không brute-force OTP/tài khoản; không đổi/reset mật khẩu hệ thống/user; không xoá file/thư mục hệ thống (được xoá file do agent tự tạo).
 - **Nơi lưu:** 11 rule `[Policy] …` nằm trong `db/policy_rules.json`, được embed vào binary (`db/policy_rules.go`).
 - **Khi khởi động:** server tự thêm các rule còn thiếu (theo tên). Nó cũng tắt `[Built-in] Recursive force delete rm -rf` và `[Built-in] Delete critical system directories`, và thu hẹp phần `rm` của `[Built-in] Destructive system commands` về đúng `/`. Ba rule mặc định này **chỉ** bị chỉnh khi còn đúng pattern gốc, rule đã bị người vận hành sửa thì không động vào.
-- **Kiểm thử:** 45 ca nên chặn/nên cho qua trong `db/policy_rules_test.go` (`TestPolicyRulesBehaviour`). Hướng dẫn chi tiết ở [docs/intercept-policy-rules.md](docs/intercept-policy-rules.md).
+- **Kiểm thử:** 51 ca nên chặn/nên cho qua trong `db/policy_rules_test.go` (`TestPolicyRulesBehaviour`). Hướng dẫn chi tiết ở [docs/intercept-policy-rules.md](docs/intercept-policy-rules.md).
 - Mọi rule bật/tắt/sửa được trên **System → Intercept rules**.
+- **Migration v5 (`intercept_policy_rules_v5`, `db/policy_rules_v5.go`):** thu hẹp `[Policy] OTP brute-force loop`.
+  - **Vấn đề:** bản v4 ghép từ khoá OTP với *mọi* vòng lặp. Khi chạy thật, nó chặn nhầm 2 script dò endpoint: danh sách đường dẫn có `/api/otp`, lặp `curl` qua từng đường dẫn.
+  - **Sửa:** bản mới chỉ chặn khi có từ khoá OTP **kèm bộ sinh dãy số lớn** (`seq 0 999999`, `range(1000000)`, `{0000..9999}`, `itertools.product`, `%06d`/`{i:06}`/`zfill(6)`, `crunch`).
+  - **Áp dụng:** chỉ cập nhật khi rule còn đúng pattern v4.
+  - **Kiểm chứng:** 2 input thật bị chặn nhầm giờ được cho qua.
 
 **Chưa thay đổi (theo quyết định của chủ dự án):**
 - **LLM judge** giữ nguyên trạng thái tắt.

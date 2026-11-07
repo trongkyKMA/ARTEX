@@ -5,7 +5,7 @@
     "priority": 95,
     "match_target": "tool_input",
     "match_type": "regex",
-    "pattern": "(?i)(?:^|[\\s;\u0026|\"'(\\x60]|\\\\n)(?:hydra|xhydra|medusa|ncrack|patator|crowbar|brutespray|kerbrute|legba)\\s",
+    "pattern": "(?i)(?:^|[\\s;&|\"'(\\x60]|\\\\n)(?:hydra|xhydra|medusa|ncrack|patator|crowbar|brutespray|kerbrute|legba)\\s",
     "action": "deny"
   },
   {
@@ -41,7 +41,7 @@
     "priority": 95,
     "match_target": "tool_input",
     "match_type": "regex",
-    "pattern": "(?i)(?:^|[^a-z0-9])(?:otp|totp|2fa|mfa|sms_?code|verify_?code|verification_?code|one.?time)(?:[^a-z0-9]|$)[\\s\\S]{0,500}?(?:\\bseq\\s+-?w?\\s*\\d|range\\s*\\(\\s*\\d|\\{\\d+\\.\\.\\d+\\}|\\bfor\\s+\\w+\\s+in\\b|\\bwhile\\b|\\bxargs\\b|\\bparallel\\b|itertools\\.product|\\s-w\\s)|(?:\\bseq\\s+-?w?\\s*\\d|range\\s*\\(\\s*\\d|\\{\\d+\\.\\.\\d+\\}|\\bfor\\s+\\w+\\s+in\\b|\\bwhile\\b|\\bxargs\\b|\\bparallel\\b|itertools\\.product)[\\s\\S]{0,500}?(?:^|[^a-z0-9])(?:otp|totp|2fa|mfa|sms_?code|verify_?code|verification_?code|one.?time)(?:[^a-z0-9]|$)",
+    "pattern": "(?i)(?:^|[^a-z0-9])(?:otp|totp|2fa|mfa|sms_?code|verify_?code|verification_?code|one.?time)(?:[^a-z0-9]|$)[\\s\\S]{0,500}?(?:\\bseq\\s+(?:-[a-z]+\\s+)*(?:\\d+\\s+)?\\d{3,}|range\\s*\\(\\s*(?:\\d+\\s*,\\s*)?\\d{3,}|\\{\\d+\\.\\.\\d{3,}\\}|itertools\\.product|%0[4-9]d|\\{\\w*:0[4-9]d?\\}|\\.zfill\\(\\s*[4-9]|\\bcrunch\\s+[4-9])|(?:\\bseq\\s+(?:-[a-z]+\\s+)*(?:\\d+\\s+)?\\d{3,}|range\\s*\\(\\s*(?:\\d+\\s*,\\s*)?\\d{3,}|\\{\\d+\\.\\.\\d{3,}\\}|itertools\\.product|%0[4-9]d|\\{\\w*:0[4-9]d?\\}|\\.zfill\\(\\s*[4-9]|\\bcrunch\\s+[4-9])[\\s\\S]{0,500}?(?:^|[^a-z0-9])(?:otp|totp|2fa|mfa|sms_?code|verify_?code|verification_?code|one.?time)(?:[^a-z0-9]|$)",
     "action": "deny"
   },
   {
@@ -50,7 +50,7 @@
     "priority": 95,
     "match_target": "tool_input",
     "match_type": "regex",
-    "pattern": "(?i)(?:^|\"command\"\\s*:\\s*\"|\"text\"\\s*:\\s*\"|[;\u0026|]|\\\\n|\\bsudo\\s|\\$\\(|\\x60)\\s*(?:passwd|chpasswd|smbpasswd|ldappasswd|kpasswd|chage)\\b|\\busermod\\b[^\\n;\u0026|]{0,100}\\s(?:-p|--password)\\s|\\bnet\\s+user\\s+[^\\s/\"\\\\]+\\s+[^\\s/\"\\\\]+|Set-ADAccountPassword|Set-LocalUser[^\\n]{0,100}-Password|\\bdsmod\\s+user[^\\n]{0,200}-pwd",
+    "pattern": "(?i)(?:^|\"command\"\\s*:\\s*\"|\"text\"\\s*:\\s*\"|[;&|]|\\\\n|\\bsudo\\s|\\$\\(|\\x60)\\s*(?:passwd|chpasswd|smbpasswd|ldappasswd|kpasswd|chage)\\b|\\busermod\\b[^\\n;&|]{0,100}\\s(?:-p|--password)\\s|\\bnet\\s+user\\s+[^\\s/\"\\\\]+\\s+[^\\s/\"\\\\]+|Set-ADAccountPassword|Set-LocalUser[^\\n]{0,100}-Password|\\bdsmod\\s+user[^\\n]{0,200}-pwd",
     "action": "deny"
   },
   {
@@ -77,7 +77,7 @@
     "priority": 95,
     "match_target": "tool_input",
     "match_type": "regex",
-    "pattern": "(?i)\\b(?:rm|rmdir|unlink|shred|srm)\\b[^\\n;\u0026|]{0,200}?(?:\\s|\\\\?[\"'=])(?:/(?:etc|bin|sbin|usr|boot|lib|lib32|lib64|opt|srv|root|home|proc|sys|mnt|media|snap|run|var/(?:www|lib|log|spool|mail|opt|backups|cache|db|local))(?:/|\\s|\\\\?[\"';\u0026|*]|$)|/(?:var|app)(?:\\s|\\\\?[\"';\u0026|*]|$)|/app/(?:artex|skills|start\\.sh)|/(?:\\s|\\\\?[\"';\u0026|*]|$)|~(?:/|\\s|\\\\?[\"';\u0026|]|$)|\\.\\./)",
+    "pattern": "(?i)\\b(?:rm|rmdir|unlink|shred|srm)\\b[^\\n;&|]{0,200}?(?:\\s|\\\\?[\"'=])(?:/(?:etc|bin|sbin|usr|boot|lib|lib32|lib64|opt|srv|root|home|proc|sys|mnt|media|snap|run|var/(?:www|lib|log|spool|mail|opt|backups|cache|db|local))(?:/|\\s|\\\\?[\"';&|*]|$)|/(?:var|app)(?:\\s|\\\\?[\"';&|*]|$)|/app/(?:artex|skills|start\\.sh)|/(?:\\s|\\\\?[\"';&|*]|$)|~(?:/|\\s|\\\\?[\"';&|]|$)|\\.\\./)",
     "action": "deny"
   },
   {
@@ -86,7 +86,7 @@
     "priority": 95,
     "match_target": "tool_input",
     "match_type": "regex",
-    "pattern": "(?i)\\bfind\\s+\\\\?[\"']?(?:/(?:etc|bin|sbin|usr|boot|lib|lib64|opt|srv|root|home|var/(?:www|lib|log)|app)\\b|/(?:\\s|\\\\?[\"']))[^\\n;\u0026|]{0,200}(?:-delete|-exec\\s+(?:rm|shred|unlink))",
+    "pattern": "(?i)\\bfind\\s+\\\\?[\"']?(?:/(?:etc|bin|sbin|usr|boot|lib|lib64|opt|srv|root|home|var/(?:www|lib|log)|app)\\b|/(?:\\s|\\\\?[\"']))[^\\n;&|]{0,200}(?:-delete|-exec\\s+(?:rm|shred|unlink))",
     "action": "deny"
   },
   {

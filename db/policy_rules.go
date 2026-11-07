@@ -14,7 +14,7 @@ import (
 //  3. deleting system files or directories (files the agent itself created —
 //     relative paths in the task workdir, /tmp, /var/tmp, /dev/shm — may be removed).
 //
-// The rules live in policy_rules.json (tested against 45 allow/deny cases with Go's
+// The rules live in policy_rules.json (tested against 51 allow/deny cases with Go's
 // RE2 engine; see docs/intercept-policy-rules.md). They are ordinary DB rules, so the
 // operator can toggle, edit or delete them on System -> Intercept rules.
 //
