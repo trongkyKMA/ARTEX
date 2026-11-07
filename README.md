@@ -15,6 +15,7 @@ fork keeps the upstream engine and adds:
 
 | Document | Contents |
 |---|---|
+| [docs/DEPLOY-VPS.md](docs/DEPLOY-VPS.md) | **Triển khai lên VPS** (tiếng Việt): step-by-step checklist — server prep, image (build / GHCR / copy), `.env`, first setup over SSH tunnel, post-install checks, HTTPS + IP allowlist, MCP from a laptop, backups, updates, incident steps |
 | [docs/HUONG-DAN.md](docs/HUONG-DAN.md) | **Hướng dẫn cài đặt & vận hành** (tiếng Việt): Docker/local install, first login, LLM per agent, skills, intercept, tasks, backup, update, troubleshooting |
 | [SECURITY-AND-L10N-NOTES.md](SECURITY-AND-L10N-NOTES.md) | What changed: localisation scope, fixed vulnerabilities (CVSS/CWE), dependency audit, intercept bypass fixes, tests |
 | [docs/intercept-policy-rules.md](docs/intercept-policy-rules.md) | The 11 policy intercept rules, how they are seeded, how to tune them, test matrix |
@@ -33,7 +34,7 @@ Or use the prebuilt image from a release (needs `docker login ghcr.io` with a to
 set `ARTEX_IMAGE=ghcr.io/trongkykma/artex` and `ARTEX_TAG=latest` (or a release tag) in `.env`, then
 `docker compose pull artex && docker compose up -d`.
 
-> Do **not** use the upstream `autumn27/artex` image: it lacks this fork's changes. The in-app "Update" button and the release workflow point at this fork (`trongkyKMA/ARTEX`, images on `ghcr.io/trongkykma/artex`); see docs/HUONG-DAN.md §11.
+> Do **not** use prebuilt upstream images (`autumn27/artex`, `tomicdd/artex`, …): they lack this fork's changes, and the published `tomicdd/artex` image was found to contain a login backdoor (unauthenticated command execution). The in-app "Update" button and the release workflow point at this fork (`trongkyKMA/ARTEX`, images on `ghcr.io/trongkykma/artex`); see docs/HUONG-DAN.md §11.
 
 ## Access for colleagues (private repository)
 

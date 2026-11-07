@@ -2,6 +2,8 @@
 
 Tài liệu này dành cho bản ARTEX đã được chỉnh sửa trong repo này. Đọc từ đầu nếu cài mới, hoặc nhảy tới mục cần thiết.
 
+> **Triển khai lên VPS / server 24/7:** làm theo checklist [DEPLOY-VPS.md](DEPLOY-VPS.md) (chuẩn bị máy, image, `.env`, truy cập an toàn, backup, cập nhật, xử lý sự cố). Tài liệu này giải thích chi tiết từng tính năng.
+
 **Mục lục**
 1. [Bản fork này khác gì bản gốc](#1-bản-fork-này-khác-gì-bản-gốc)
 2. [Yêu cầu hệ thống](#2-yêu-cầu-hệ-thống)
@@ -35,7 +37,24 @@ Tài liệu này dành cho bản ARTEX đã được chỉnh sửa trong repo n�
 | Docker | Build image **từ chính source này** (`./docker-build.sh`), không kéo image gốc | §3 |
 | MCP | Adapter `adapters/agent` để Claude Code đọc, verify và triage finding | §13 |
 
-> ⚠️ **Không dùng image `autumn27/artex` của tác giả gốc**: image đó không có các thay đổi ở trên. Nút "Update" trong app đã được trỏ về repo này (§11).
+> ⚠️ **Không dùng image dựng sẵn của upstream** (`autumn27/artex`, `tomicdd/artex`…). Các image này không có những thay đổi ở trên, và image `tomicdd/artex` đã được xác nhận có **backdoor** (chạy lệnh không cần đăng nhập qua form login). Chỉ chạy image build từ source repo này hoặc từ CI của repo này. Nút "Update" trong app đã được trỏ về repo này (§11). Xử lý nếu đã lỡ chạy image lạ: [DEPLOY-VPS.md §11](DEPLOY-VPS.md#11-bảo-mật-và-tuân-thủ).
+
+### Tính năng có sẵn từ bản gốc (vẫn dùng được)
+
+| Tính năng | Ở đâu | Ghi chú |
+|---|---|---|
+| **Retest finding** | Nút **Retest** trong danh sách finding, hoặc tab **Retest** trong task | Tạo phiên agent `retester` riêng, không chạy lại task gốc. Kết luận: *Still reproducible* / *Fixed* / *Unable to confirm*. Kết luận "Fixed" tự đổi trạng thái finding thành Fixed |
+| **Traffic làm bằng chứng** | Mục **Linked traffic** trong chi tiết finding; trang Traffic chọn nhiều rồi gắn vào finding | Bằng chứng lưu riêng ở `data/evidence`, không mất khi dọn `data/traffic`. Tuỳ chọn **Agent auto-binds traffic** (System settings, mặc định tắt) cho agent tự gắn, đổi lại tốn thêm token |
+| **Đồng bộ asset từ ScopeSentry** | Trang **Asset sync** | Nhập URL + API key của ScopeSentry, chọn project/task và loại asset rồi import |
+| **Hỏi bên lề `/btw`** | Ô chat: gõ `/btw <câu hỏi>` | Hỏi agent đang chạy mà không chen vào luồng chính |
+| **Chi tiết phê duyệt** | Trang Approval records, Intercept approvals, thẻ phê duyệt trong chat | Mở rộng để xem tool, input và lý do |
+| **MCP server từ xa** | System → MCP | Hỗ trợ `http` (Streamable HTTP) và `sse`. Với SSE kiểu cũ: URL là `/sse`, thêm header `Authorization=Bearer <token>` |
+
+**Kiến trúc tóm tắt:** một backend Go (có nhúng giao diện Next.js) + PostgreSQL.
+- Mỗi task có một **planner** (sinh intent, tức hướng khám phá) và N **worker** (mỗi worker nhận một intent, chạy tool thật, ghi lại fact/asset/finding).
+- **Main agent** là kênh chat với người vận hành.
+- Hai đồ thị: **asset graph** (dùng chung giữa các task) và **exploration graph** (tiến độ của từng task), nối với nhau qua anchor. Coverage map dựa vào hai đồ thị này.
+- Mọi request HTTP của worker đi qua **proxy ghi traffic**. Mọi lời gọi tool đi qua **intercept**.
 
 ---
 
