@@ -435,6 +435,13 @@ function ProfileSheet({
 
   async function testConnection() {
     if (testing) return;
+    // With an empty model the backend falls back to its per-format default
+    // (e.g. gpt-4o for the OpenAI format), which other providers reject with a
+    // confusing "model does not exist" error. Ask for a model first.
+    if (!model.trim()) {
+      toast.error("Pick a suggested model or enter a model ID before testing the connection");
+      return;
+    }
     setTesting(true);
     try {
       // 用配置实际会跑的思考参数来测，这样不支持该字段的模型在这里就失败，
