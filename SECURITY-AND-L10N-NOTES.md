@@ -168,7 +168,7 @@ Rà soát cơ chế intercept (`guard/`, `intercept/`) tìm ra các đường m�
 ### Nguồn cập nhật trỏ về repo của fork
 
 - **Nút Update:** `selfupdate/github.go` đổi `Repo` từ `Hinln/ARTEX` sang `trongkyKMA/ARTEX-VPB`. Vẫn là hằng số ghi cứng trong code (không cấu hình được), đúng lý do tác giả gốc nêu: cho cấu hình nguồn cập nhật là mở đường chạy code từ xa.
-- **Workflow release:** job Docker đẩy image lên `ghcr.io/trongkykma/artex-vpb` bằng `GITHUB_TOKEN`, thay cho Docker Hub `autumn27/artex`.
+- **Workflow release:** job Docker đẩy image lên `ghcr.io/trongkykma/artex` bằng `GITHUB_TOKEN`, thay cho Docker Hub `autumn27/artex`.
 - **Cách phát hành và dùng nút Update:** xem `docs/HUONG-DAN.md` §11.
 - **Khuyến nghị còn mở:** bản cập nhật mới chỉ kiểm checksum, chưa có chữ ký số.
 

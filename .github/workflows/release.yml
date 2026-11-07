@@ -99,7 +99,7 @@ jobs:
   # ④ 多架构镜像 → 推 Docker Hub（复用 binaries 编好的 Linux 二进制，
   #    镜像里只装工具 + 放二进制；arm64 仅需模拟 apt 层，构建快很多）
   # Fork: pushes to this repository's GitHub Container Registry
-  # (ghcr.io/trongkykma/artex-vpb) with the built-in GITHUB_TOKEN, instead of the
+  # (ghcr.io/trongkykma/artex) with the built-in GITHUB_TOKEN, instead of the
   # upstream Docker Hub image (autumn27/artex), whose secrets this fork does not have.
   docker:
     needs: binaries
@@ -127,7 +127,7 @@ jobs:
       - uses: docker/metadata-action@v5
         id: meta
         with:
-          images: ghcr.io/trongkykma/artex-vpb
+          images: ghcr.io/trongkykma/artex
           tags: |
             type=ref,event=tag
             type=raw,value=latest

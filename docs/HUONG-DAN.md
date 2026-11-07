@@ -308,7 +308,7 @@ Nút Update giờ lấy bản phát hành từ **repo của anh** (`trongkyKMA/A
    GitHub Actions (`.github/workflows/release.yml`) sẽ:
    - build frontend và binary cho Linux/macOS/Windows;
    - tạo **Release** đính kèm file zip và `SHA256SUMS`;
-   - đẩy image Docker lên `ghcr.io/trongkykma/artex-vpb:v1.0.0` và `:latest`.
+   - đẩy image Docker lên `ghcr.io/trongkykma/artex:v1.0.0` và `:latest`.
 
    Theo dõi ở tab **Actions** của repo.
 2. **Token:** repo private, nên process ARTEX cần biến `ARTEX_UPDATE_GITHUB_TOKEN`.
@@ -319,7 +319,7 @@ Nút Update giờ lấy bản phát hành từ **repo của anh** (`trongkyKMA/A
 Lưu ý:
 - **Chỉ binary mang phiên bản dạng tag** (vd. `v1.0.0`, tức bản lấy từ Release hoặc build bằng `ARTEX_BUILD_VERSION=v1.0.0 ./build.sh`) mới dùng được nút Update. Bản build bằng `docker-build.sh` mang phiên bản `dev`, nên nút bị vô hiệu.
 - **Với Docker,** nút Update chỉ thay binary *bên trong* container. Tạo lại container (`docker compose up -d`) là quay về binary của image. Vì vậy với Docker nên cập nhật bằng `./update.sh` hoặc `./docker-build.sh`, hoặc dùng image từ GHCR:
-  - đặt `ARTEX_IMAGE=ghcr.io/trongkykma/artex-vpb` và `ARTEX_TAG=v1.0.0` trong `.env`;
+  - đặt `ARTEX_IMAGE=ghcr.io/trongkykma/artex` và `ARTEX_TAG=v1.0.0` trong `.env`;
   - đăng nhập `docker login ghcr.io` (dùng token có quyền `read:packages`);
   - chạy `docker compose pull artex && docker compose up -d`.
 - Cơ chế cập nhật kiểm tra checksum nhưng **chưa có chữ ký số**: ai kiểm soát được repo/Release thì kiểm soát được bản cập nhật. Hãy bảo vệ tài khoản GitHub bằng 2FA.
