@@ -298,7 +298,7 @@ Hoặc thủ công: `git pull && ./docker-build.sh && docker compose up -d`.
 
 ### Cập nhật trong app (System → Settings → Update)
 
-Nút Update giờ lấy bản phát hành từ **repo của anh** (`trongkyKMA/ARTEX-VPB`, ghi cứng trong `selfupdate/github.go`), không còn từ repo gốc. Để dùng:
+Nút Update giờ lấy bản phát hành từ **repo của anh** (`trongkyKMA/ARTEX`, ghi cứng trong `selfupdate/github.go`), không còn từ repo gốc. Để dùng:
 
 1. **Phát hành một phiên bản:** gắn tag rồi push.
    ```bash
@@ -312,7 +312,7 @@ Nút Update giờ lấy bản phát hành từ **repo của anh** (`trongkyKMA/A
 
    Theo dõi ở tab **Actions** của repo.
 2. **Token:** repo private, nên process ARTEX cần biến `ARTEX_UPDATE_GITHUB_TOKEN`.
-   - Tạo fine-grained token chỉ cho repo `trongkyKMA/ARTEX-VPB`, quyền **Contents: Read-only**.
+   - Tạo fine-grained token chỉ cho repo `trongkyKMA/ARTEX`, quyền **Contents: Read-only**.
    - Docker: điền vào `.env`. Chạy trực tiếp: export trước khi chạy `./start.sh`.
 3. **Bấm Update:** app tải đúng file cho nền tảng, kiểm tra `SHA256SUMS`, chạy thử binary mới, rồi khởi động lại bằng bản mới. Có nút quay về bản trước.
 

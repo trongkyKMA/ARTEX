@@ -18,7 +18,7 @@ import (
 // installs this fork's releases instead of the upstream Hinln/ARTEX builds. Still
 // a compile-time constant for the reason above; set ARTEX_UPDATE_GITHUB_TOKEN to a
 // token with Contents: read on this repository.
-const Repo = "trongkyKMA/ARTEX-VPB"
+const Repo = "trongkyKMA/ARTEX"
 
 // GitHubTokenEnv 只由后端进程读取，不通过前端或配置 API 传递令牌。
 const GitHubTokenEnv = "ARTEX_UPDATE_GITHUB_TOKEN"
