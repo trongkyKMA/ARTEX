@@ -19,10 +19,30 @@ func findingTrafficBindingEnabled() bool {
 	return FindingTrafficBindingEnabled != nil && FindingTrafficBindingEnabled()
 }
 
+// findingLanguageNote asks every reporter to write the finding's display fields in
+// English (the operator UI and reports are English; agent prompts stay Chinese).
+// Raw evidence is kept verbatim. Appended in code, so it also applies to databases
+// whose report_finding description/prompt were seeded or edited earlier.
+const findingLanguageNote = "\n\n**语言**：name（漏洞名称）、vulnclass（漏洞类别）、summary（摘要）必须用**英文（English）**填写，" +
+	"例如 vulnclass=\"Information Disclosure\"、name=\"Reflected XSS in search parameter\"；" +
+	"evidence 中的命令、请求/响应、输出原文照贴，不要翻译。"
+
+// findingWorkflowTools applies the finding workflow decorations, then the language
+// note on report_finding.
+func findingWorkflowTools(agentKey string, tools []actool.CoreTool) ([]actool.CoreTool, string) {
+	out, guidance := findingWorkflowToolsBase(agentKey, tools)
+	for i, tool := range out {
+		if tool.Name() == "report_finding" {
+			out[i] = DecorateTool(tool, tool.Description()+findingLanguageNote, tool.InputSchema())
+		}
+	}
+	return out, guidance
+}
+
 // Applied after ToolResolve: user descriptions and prompts remain intact, while
 // all actual reporters (including Planner and custom chat agents) see the same
 // API contract. Disabled/unbound tools are never reintroduced here.
-func findingWorkflowTools(agentKey string, tools []actool.CoreTool) ([]actool.CoreTool, string) {
+func findingWorkflowToolsBase(agentKey string, tools []actool.CoreTool) ([]actool.CoreTool, string) {
 	if !findingTrafficBindingEnabled() {
 		out := make([]actool.CoreTool, 0, len(tools))
 		for _, tool := range tools {

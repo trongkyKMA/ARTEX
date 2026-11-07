@@ -18,7 +18,11 @@ Ngày: 2026-11-07 · Phạm vi: toàn bộ source `ARTEX-main` (Go backend + Nex
 - Toàn bộ **prompt / tool description / tool result gửi cho LLM** (`agent/`, `intercept/prompt.go`, `platform_tools.go`, `guard/`, `TrafficSearchDescription`…). Đây là quyết định của chủ dự án: LLM dùng là DeepSeek/GLM nên prompt tiếng Trung vẫn ổn, và các agent vẫn trao đổi với nhau bằng tiếng Trung. **Ngoại lệ (report ra tiếng Anh):** chỉ đổi phần chỉ định ngôn ngữ đầu ra, phần còn lại của prompt giữ nguyên:
   - Agent viết report lỗ hổng (`agent/promptcatalog.go: ReporterDefaultPrompt`): tiêu đề các mục đổi sang tiếng Anh (`## Overview`, `## Impact`, `## Steps to Reproduce`, `## Evidence`, `## PoC`, `## Root Cause`, `## Remediation`), kèm dòng yêu cầu viết toàn bộ report bằng tiếng Anh.
   - Agent retest (`agent/retester.go`): yêu cầu trả lời và ghi kết luận retest bằng tiếng Anh.
-  - Report tổng hợp của task (`report/`) do code sinh ra nên đã là tiếng Anh. Tuy nhiên tiêu đề và tóm tắt của từng finding do worker LLM ghi bằng tiếng Trung, nên vẫn giữ tiếng Trung. Các nội dung do LLM sinh khác (trả lời chat, tóm tắt intent, lý do kết thúc) cũng vậy.
+  - **Tên, loại và tóm tắt của finding** (cột *Vulnerability* trên trang Findings): agent ghi khi gọi `report_finding`.
+    - `agent/finding_workflow.go` (`findingLanguageNote`) gắn thêm vào mô tả tool **lúc chạy** một dòng yêu cầu `name`/`vulnclass`/`summary` viết **bằng tiếng Anh**; `evidence` giữ nguyên văn.
+    - Vì gắn bằng code nên áp dụng cả cho DB đã cài, không cần migration.
+    - **Chỉ áp dụng cho finding mới.** Finding cũ vẫn tiếng Trung, có thể sửa tên trong form sửa ở trang Findings.
+  - Report tổng hợp của task (`report/`) do code sinh ra nên đã là tiếng Anh. Các nội dung do LLM sinh khác (trả lời chat, tóm tắt intent, lý do kết thúc) vẫn tiếng Trung.
   - **Database đã cài từ trước:** prompt và tên agent được seed một lần vào DB, nên bản cài cũ vẫn giữ prompt tiếng Trung. Cần sửa trong **System → Agent** (`Report writer` / `Finding retest`), hoặc cài mới.
 - Marker lưu trong DB hoặc được parse: `[模型]`, `实际操作：`, `备案`, tiền tố lệnh `意图`/`提示`, định dạng mention `@[漏洞#id …]` (UI hiển thị "Finding #id"), summary `工具 X 请求审批`, ghi chú phiên bản prompt `内置默认`.
 - Comment trong code (để diff dễ review).
