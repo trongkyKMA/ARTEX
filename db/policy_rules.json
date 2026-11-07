@@ -59,7 +59,7 @@
     "priority": 95,
     "match_target": "tool_input",
     "match_type": "regex",
-    "pattern": "(?i)\\bALTER\\s+(?:USER|LOGIN|ROLE)\\b[^;\\n]{0,200}\\b(?:PASSWORD|IDENTIFIED)\\b|\\bSET\\s+PASSWORD\\b|\\bsp_password\\b|\\bUPDATE\\s+[\\w.\\x60\"\\[\\]\\\\]*(?:user|account|member|admin|login)\\w*[\\x60\"\\]\\\\]*\\s+SET\\s+[^;\\n]{0,200}?(?:pass(?:word|wd)?|pwd|hash)\\w*[\\x60\"\\]\\\\]*\\s*=",
+    "pattern": "(?i)(?:\\b|\\\\n)ALTER\\s+(?:USER|LOGIN|ROLE)\\b[^;\\n]{0,200}\\b(?:PASSWORD|IDENTIFIED)\\b|(?:\\b|\\\\n)SET\\s+PASSWORD\\b|\\bsp_password\\b|(?:\\b|\\\\n)UPDATE\\s+[\\w.\\x60\"\\[\\]\\\\]*(?:user|account|member|admin|login)\\w*[\\x60\"\\]\\\\]*\\s+SET\\s+[^;\\n]{0,200}?(?:pass(?:word|wd)?|pwd|hash)\\w*[\\x60\"\\]\\\\]*\\s*=",
     "action": "deny"
   },
   {
@@ -77,7 +77,7 @@
     "priority": 95,
     "match_target": "tool_input",
     "match_type": "regex",
-    "pattern": "(?i)\\b(?:rm|rmdir|unlink|shred|srm)\\b[^\\n;&|]{0,200}?(?:\\s|\\\\?[\"'=])(?:/(?:etc|bin|sbin|usr|boot|lib|lib32|lib64|opt|srv|root|home|proc|sys|mnt|media|snap|run|var/(?:www|lib|log|spool|mail|opt|backups|cache|db|local))(?:/|\\s|\\\\?[\"';&|*]|$)|/(?:var|app)(?:\\s|\\\\?[\"';&|*]|$)|/app/(?:artex|skills|start\\.sh)|/(?:\\s|\\\\?[\"';&|*]|$)|~(?:/|\\s|\\\\?[\"';&|]|$)|\\.\\./)",
+    "pattern": "(?i)(?:\\b|\\\\n)(?:rm|rmdir|unlink|shred|srm)\\b[^\\n;&|\\\\]{0,200}?(?:\\s|\\\\?[\"'=])(?:/(?:etc|bin|sbin|usr|boot|lib|lib32|lib64|opt|srv|root|home|proc|sys|mnt|media|snap|run|var/(?:www|lib|log|spool|mail|opt|backups|cache|db|local))(?:/|\\s|\\\\?[\"';&|*]|$)|/(?:var|app)(?:\\s|\\\\?[\"';&|*]|$)|/app/(?:artex|skills|start\\.sh)|/(?:\\s|\\\\?[\"';&|*]|$)|~(?:/|\\s|\\\\?[\"';&|]|$)|\\.\\./)",
     "action": "deny"
   },
   {
@@ -86,7 +86,7 @@
     "priority": 95,
     "match_target": "tool_input",
     "match_type": "regex",
-    "pattern": "(?i)\\bfind\\s+\\\\?[\"']?(?:/(?:etc|bin|sbin|usr|boot|lib|lib64|opt|srv|root|home|var/(?:www|lib|log)|app)\\b|/(?:\\s|\\\\?[\"']))[^\\n;&|]{0,200}(?:-delete|-exec\\s+(?:rm|shred|unlink))",
+    "pattern": "(?i)(?:\\b|\\\\n)find\\s+\\\\?[\"']?(?:/(?:etc|bin|sbin|usr|boot|lib|lib64|opt|srv|root|home|var/(?:www|lib|log)|app)\\b|/(?:\\s|\\\\?[\"']))[^\\n;&|]{0,200}(?:-delete|-exec\\s+(?:rm|shred|unlink))",
     "action": "deny"
   },
   {

@@ -136,13 +136,20 @@ Rà soát cơ chế intercept (`guard/`, `intercept/`) tìm ra các đường m�
 - **3 tiêu chí:** không brute-force OTP/tài khoản; không đổi/reset mật khẩu hệ thống/user; không xoá file/thư mục hệ thống (được xoá file do agent tự tạo).
 - **Nơi lưu:** 11 rule `[Policy] …` nằm trong `db/policy_rules.json`, được embed vào binary (`db/policy_rules.go`).
 - **Khi khởi động:** server tự thêm các rule còn thiếu (theo tên). Nó cũng tắt `[Built-in] Recursive force delete rm -rf` và `[Built-in] Delete critical system directories`, và thu hẹp phần `rm` của `[Built-in] Destructive system commands` về đúng `/`. Ba rule mặc định này **chỉ** bị chỉnh khi còn đúng pattern gốc, rule đã bị người vận hành sửa thì không động vào.
-- **Kiểm thử:** 51 ca nên chặn/nên cho qua trong `db/policy_rules_test.go` (`TestPolicyRulesBehaviour`). Hướng dẫn chi tiết ở [docs/intercept-policy-rules.md](docs/intercept-policy-rules.md).
+- **Kiểm thử:** 57 ca nên chặn/nên cho qua trong `db/policy_rules_test.go` (`TestPolicyRulesBehaviour`). Hướng dẫn chi tiết ở [docs/intercept-policy-rules.md](docs/intercept-policy-rules.md).
 - Mọi rule bật/tắt/sửa được trên **System → Intercept rules**.
 - **Migration v5 (`intercept_policy_rules_v5`, `db/policy_rules_v5.go`):** thu hẹp `[Policy] OTP brute-force loop`.
   - **Vấn đề:** bản v4 ghép từ khoá OTP với *mọi* vòng lặp. Khi chạy thật, nó chặn nhầm 2 script dò endpoint: danh sách đường dẫn có `/api/otp`, lặp `curl` qua từng đường dẫn.
   - **Sửa:** bản mới chỉ chặn khi có từ khoá OTP **kèm bộ sinh dãy số lớn** (`seq 0 999999`, `range(1000000)`, `{0000..9999}`, `itertools.product`, `%06d`/`{i:06}`/`zfill(6)`, `crunch`).
   - **Áp dụng:** chỉ cập nhật khi rule còn đúng pattern v4.
   - **Kiểm chứng:** 2 input thật bị chặn nhầm giờ được cho qua.
+- **Migration v6 (`intercept_policy_rules_v6`, `db/policy_rules_v6.go`):** xử lý ranh giới dòng lệnh. Trong input JSON, xuống dòng là 2 ký tự `\n`, gây ra 2 lỗi:
+  - Rule `rm` có thể khớp **vượt sang dòng sau** (vd. `rm -f $COOKIE_JAR` rồi dòng `curl … -o /dev/null`). Sửa: đoạn giữa không vượt qua dấu `\`.
+  - Lệnh ở **đầu một dòng mới** không bị bắt, vì ký tự trước nó là `n` nên `\b` không khớp (vd. `cd /tmp` xuống dòng `rm -rf /etc/x` lọt qua). Sửa: rule `rm`, `find -delete` và SQL đổi mật khẩu được phép bắt đầu ngay sau `\n`.
+  - Chỉ cập nhật khi rule còn đúng pattern trước đó. Bộ test lên 57 ca.
+- **Lưu ý khi chỉnh tay:** 2 rule mặc định `[Built-in] Recursive force delete rm -rf` và `[Built-in] Delete critical system directories` chặn rộng hơn tiêu chí 3.
+  - Rule thứ hai còn mắc đúng lỗi vượt dòng ở trên. Khi chạy thật, nó chặn agent xoá file cookie tạm của chính agent.
+  - v4 tắt sẵn 2 rule này. Nếu bật lại thì agent sẽ không dọn được file tạm của chính nó.
 
 **Chưa thay đổi (theo quyết định của chủ dự án):**
 - **LLM judge** giữ nguyên trạng thái tắt.

@@ -13,7 +13,7 @@ Rule chỉ chặn đúng hành vi bị cấm, **không chặn kỹ thuật kiể
 - Crack hash offline bằng `hashcat`/`john`.
 - Gửi một request OTP; trinh sát (GET) trang reset mật khẩu.
 
-Toàn bộ rule đã được chạy thử bằng engine regex RE2 của Go (đúng engine ARTEX dùng), trên input JSON y hệt dạng interceptor nhận được. Kết quả **51/51 ca đúng** (xem phần cuối).
+Toàn bộ rule đã được chạy thử bằng engine regex RE2 của Go (đúng engine ARTEX dùng), trên input JSON y hệt dạng interceptor nhận được. Kết quả **57/57 ca đúng** (xem phần cuối).
 
 ## Rule được cài tự động
 
@@ -23,7 +23,7 @@ Toàn bộ rule đã được chạy thử bằng engine regex RE2 của Go (đ�
 - **Không ghi đè thay đổi của anh:** rule nào đã có (trùng tên) thì bỏ qua. Rule mặc định nào anh đã sửa thì không bị đụng tới.
 - **Kiểm tra:** vào **System → Intercept rules**, phải thấy 11 rule tên bắt đầu bằng `[Policy]`, đang bật.
 - **Bật/tắt/sửa/xoá:** làm trực tiếp trên trang đó, có hiệu lực ngay.
-- **Đổi bộ rule cho cài mới:** sửa `db/policy_rules.json`, chạy `go test ./db/ -run TestPolicyRulesBehaviour` (51 ca), rồi build lại.
+- **Đổi bộ rule cho cài mới:** sửa `db/policy_rules.json`, chạy `go test ./db/ -run TestPolicyRulesBehaviour` (57 ca), rồi build lại.
   - Với DB đã cài, sửa trên UI. Migration không chạy lại.
   - Nếu xoá rule trên UI rồi muốn cài lại, xoá dòng `intercept_policy_rules_v4` trong bảng `settings` rồi khởi động lại server.
 - **Ghi thẳng vào DB** (không qua UI/API): server giữ rule trong bộ nhớ đệm. Gạt tắt rồi bật lại một rule bất kỳ trên UI để server nạp lại.
@@ -149,7 +149,7 @@ Pattern:
 Pattern:
 
 ```
-(?i)\bALTER\s+(?:USER|LOGIN|ROLE)\b[^;\n]{0,200}\b(?:PASSWORD|IDENTIFIED)\b|\bSET\s+PASSWORD\b|\bsp_password\b|\bUPDATE\s+[\w.\x60"\[\]\\]*(?:user|account|member|admin|login)\w*[\x60"\]\\]*\s+SET\s+[^;\n]{0,200}?(?:pass(?:word|wd)?|pwd|hash)\w*[\x60"\]\\]*\s*=
+(?i)(?:\b|\\n)ALTER\s+(?:USER|LOGIN|ROLE)\b[^;\n]{0,200}\b(?:PASSWORD|IDENTIFIED)\b|(?:\b|\\n)SET\s+PASSWORD\b|\bsp_password\b|(?:\b|\\n)UPDATE\s+[\w.\x60"\[\]\\]*(?:user|account|member|admin|login)\w*[\x60"\]\\]*\s+SET\s+[^;\n]{0,200}?(?:pass(?:word|wd)?|pwd|hash)\w*[\x60"\]\\]*\s*=
 ```
 
 ### 8. [Policy] Change password - HTTP request
@@ -179,7 +179,7 @@ Pattern:
 Pattern:
 
 ```
-(?i)\b(?:rm|rmdir|unlink|shred|srm)\b[^\n;&|]{0,200}?(?:\s|\\?["'=])(?:/(?:etc|bin|sbin|usr|boot|lib|lib32|lib64|opt|srv|root|home|proc|sys|mnt|media|snap|run|var/(?:www|lib|log|spool|mail|opt|backups|cache|db|local))(?:/|\s|\\?["';&|*]|$)|/(?:var|app)(?:\s|\\?["';&|*]|$)|/app/(?:artex|skills|start\.sh)|/(?:\s|\\?["';&|*]|$)|~(?:/|\s|\\?["';&|]|$)|\.\./)
+(?i)(?:\b|\\n)(?:rm|rmdir|unlink|shred|srm)\b[^\n;&|\\]{0,200}?(?:\s|\\?["'=])(?:/(?:etc|bin|sbin|usr|boot|lib|lib32|lib64|opt|srv|root|home|proc|sys|mnt|media|snap|run|var/(?:www|lib|log|spool|mail|opt|backups|cache|db|local))(?:/|\s|\\?["';&|*]|$)|/(?:var|app)(?:\s|\\?["';&|*]|$)|/app/(?:artex|skills|start\.sh)|/(?:\s|\\?["';&|*]|$)|~(?:/|\s|\\?["';&|]|$)|\.\./)
 ```
 
 ### 10. [Policy] Delete system files/dirs (find -delete)
@@ -194,7 +194,7 @@ Pattern:
 Pattern:
 
 ```
-(?i)\bfind\s+\\?["']?(?:/(?:etc|bin|sbin|usr|boot|lib|lib64|opt|srv|root|home|var/(?:www|lib|log)|app)\b|/(?:\s|\\?["']))[^\n;&|]{0,200}(?:-delete|-exec\s+(?:rm|shred|unlink))
+(?i)(?:\b|\\n)find\s+\\?["']?(?:/(?:etc|bin|sbin|usr|boot|lib|lib64|opt|srv|root|home|var/(?:www|lib|log)|app)\b|/(?:\s|\\?["']))[^\n;&|]{0,200}(?:-delete|-exec\s+(?:rm|shred|unlink))
 ```
 
 ### 11. [Policy] Delete system files/dirs (Python/Node APIs)
@@ -230,7 +230,7 @@ Pattern mới cho `[Built-in] Destructive system commands`, giữ nguyên các p
 
 Các rule mặc định khác giữ nguyên: HTTP `DELETE`, SQL `DROP`/`TRUNCATE`, Redis `FLUSHALL`, `mkfs`, `dd`, `shutdown`…
 
-## Kết quả kiểm thử (51/51)
+## Kết quả kiểm thử (57/57)
 
 | Tiêu chí | Bị chặn (đúng) | Được phép (đúng) |
 |---|---|---|

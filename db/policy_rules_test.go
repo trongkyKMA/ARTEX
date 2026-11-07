@@ -103,6 +103,15 @@ func TestPolicyRulesBehaviour(t *testing.T) {
 		{false, `rm -f /dev/shm/x`},
 		{false, `python3 -c "import os; os.remove('result.json')"`},
 		{false, `curl -s https://t/download?file=../../etc/passwd`},
+		// The match must not run past the end of the rm command into the next line
+		// (in the JSON input a newline is the two characters backslash + n). Seen
+		// live: deleting the agent's own cookie jar, then curl -o /dev/null.
+		{false, "CJ=/app/data/tasks/1/i25/cj.txt; rm -f $CJ\n# new session cookie\ncurl -sk -c $CJ -o /dev/null https://t/api/v1/"},
+		{false, "rm -f out.txt\ncat /etc/passwd"},
+		{true, `rm -rf "/var/www/html"`},
+		{true, "cd /tmp\nrm -rf /etc/nginx"},
+		{true, "cd /tmp\nfind /var/log -name '*.gz' -delete"},
+		{true, "mysql -uroot <<'SQL'\nALTER USER 'app'@'%' IDENTIFIED BY 'x';\nSQL"},
 	}
 	for _, c := range cases {
 		in := toolInput(c.cmd)
