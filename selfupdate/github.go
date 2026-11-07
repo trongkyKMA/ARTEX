@@ -13,7 +13,12 @@ import (
 
 // Repo 是发布源。写死而不是做成配置项：更新源可配等于给任何能改配置的人一条
 // 远程代码执行通道，对一个渗透测试平台来说这个口子开不得。
-const Repo = "Hinln/ARTEX"
+//
+// Fork: points at this fork's own (private) repository, so the in-app updater
+// installs this fork's releases instead of the upstream Hinln/ARTEX builds. Still
+// a compile-time constant for the reason above; set ARTEX_UPDATE_GITHUB_TOKEN to a
+// token with Contents: read on this repository.
+const Repo = "trongkyKMA/ARTEX-VPB"
 
 // GitHubTokenEnv 只由后端进程读取，不通过前端或配置 API 传递令牌。
 const GitHubTokenEnv = "ARTEX_UPDATE_GITHUB_TOKEN"

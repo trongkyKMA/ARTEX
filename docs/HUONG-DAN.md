@@ -33,7 +33,7 @@ Tài liệu này dành cho bản ARTEX đã được chỉnh sửa trong repo n�
 | Skill | Sửa frontmatter `scopesentry`, mở rộng mô tả `api-recon` | §7 |
 | Docker | Build image **từ chính source này** (`./docker-build.sh`), không kéo image gốc | §3 |
 
-> ⚠️ **Không dùng image `autumn27/artex` và không dùng nút "Update" trong app.** Cả hai lấy bản của tác giả gốc, sẽ mất toàn bộ thay đổi ở trên. Xem §11.
+> ⚠️ **Không dùng image `autumn27/artex` của tác giả gốc**: image đó không có các thay đổi ở trên. Nút "Update" trong app đã được trỏ về repo của anh (§11).
 
 ---
 
@@ -295,7 +295,34 @@ git pull
 Hoặc thủ công: `git pull && ./docker-build.sh && docker compose up -d`.
 
 - **Database tự migrate** khi khởi động (schema và các migration rule). Không cần chạy gì thêm. Vẫn nên backup trước khi cập nhật.
-- **Không dùng nút Update trong System → Settings,** và **không đặt `ARTEX_UPDATE_GITHUB_TOKEN`**. Cơ chế đó tải bản phát hành của repo gốc và ghi đè bản này. Bản build bằng `docker-build.sh` mang phiên bản `dev`, nên nút này tự bị vô hiệu.
+
+### Cập nhật trong app (System → Settings → Update)
+
+Nút Update giờ lấy bản phát hành từ **repo của anh** (`trongkyKMA/ARTEX-VPB`, ghi cứng trong `selfupdate/github.go`), không còn từ repo gốc. Để dùng:
+
+1. **Phát hành một phiên bản:** gắn tag rồi push.
+   ```bash
+   git tag v1.0.0
+   git push origin v1.0.0
+   ```
+   GitHub Actions (`.github/workflows/release.yml`) sẽ:
+   - build frontend và binary cho Linux/macOS/Windows;
+   - tạo **Release** đính kèm file zip và `SHA256SUMS`;
+   - đẩy image Docker lên `ghcr.io/trongkykma/artex-vpb:v1.0.0` và `:latest`.
+
+   Theo dõi ở tab **Actions** của repo.
+2. **Token:** repo private, nên process ARTEX cần biến `ARTEX_UPDATE_GITHUB_TOKEN`.
+   - Tạo fine-grained token chỉ cho repo `trongkyKMA/ARTEX-VPB`, quyền **Contents: Read-only**.
+   - Docker: điền vào `.env`. Chạy trực tiếp: export trước khi chạy `./start.sh`.
+3. **Bấm Update:** app tải đúng file cho nền tảng, kiểm tra `SHA256SUMS`, chạy thử binary mới, rồi khởi động lại bằng bản mới. Có nút quay về bản trước.
+
+Lưu ý:
+- **Chỉ binary mang phiên bản dạng tag** (vd. `v1.0.0`, tức bản lấy từ Release hoặc build bằng `ARTEX_BUILD_VERSION=v1.0.0 ./build.sh`) mới dùng được nút Update. Bản build bằng `docker-build.sh` mang phiên bản `dev`, nên nút bị vô hiệu.
+- **Với Docker,** nút Update chỉ thay binary *bên trong* container. Tạo lại container (`docker compose up -d`) là quay về binary của image. Vì vậy với Docker nên cập nhật bằng `./update.sh` hoặc `./docker-build.sh`, hoặc dùng image từ GHCR:
+  - đặt `ARTEX_IMAGE=ghcr.io/trongkykma/artex-vpb` và `ARTEX_TAG=v1.0.0` trong `.env`;
+  - đăng nhập `docker login ghcr.io` (dùng token có quyền `read:packages`);
+  - chạy `docker compose pull artex && docker compose up -d`.
+- Cơ chế cập nhật kiểm tra checksum nhưng **chưa có chữ ký số**: ai kiểm soát được repo/Release thì kiểm soát được bản cập nhật. Hãy bảo vệ tài khoản GitHub bằng 2FA.
 
 ---
 

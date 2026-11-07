@@ -27,7 +27,7 @@ docker compose up -d
 docker compose logs artex | grep "setup token"   # one-time token for http://<host>:8787/setup
 ```
 
-> Do **not** use the upstream `autumn27/artex` image or the in-app "Update" button: both install the upstream build and drop this fork's changes.
+> Do **not** use the upstream `autumn27/artex` image: it lacks this fork's changes. The in-app "Update" button and the release workflow point at this fork (`trongkyKMA/ARTEX-VPB`, images on `ghcr.io/trongkykma/artex-vpb`); see docs/HUONG-DAN.md §11.
 
 The original (Chinese) upstream README follows.
 

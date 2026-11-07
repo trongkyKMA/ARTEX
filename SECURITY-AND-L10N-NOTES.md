@@ -165,6 +165,13 @@ Rà soát cơ chế intercept (`guard/`, `intercept/`) tìm ra các đường m�
 - Rule chặn theo asset (Asset intercept) chỉ được kiểm khi tạo intent / thêm asset, không kiểm lúc chạy lệnh.
 - Kiểm soát chính cho mạng nội bộ vẫn là firewall egress dạng allowlist và chạy ARTEX trong container ít quyền.
 
+### Nguồn cập nhật trỏ về repo của fork
+
+- **Nút Update:** `selfupdate/github.go` đổi `Repo` từ `Hinln/ARTEX` sang `trongkyKMA/ARTEX-VPB`. Vẫn là hằng số ghi cứng trong code (không cấu hình được), đúng lý do tác giả gốc nêu: cho cấu hình nguồn cập nhật là mở đường chạy code từ xa.
+- **Workflow release:** job Docker đẩy image lên `ghcr.io/trongkykma/artex-vpb` bằng `GITHUB_TOKEN`, thay cho Docker Hub `autumn27/artex`.
+- **Cách phát hành và dùng nút Update:** xem `docs/HUONG-DAN.md` §11.
+- **Khuyến nghị còn mở:** bản cập nhật mới chỉ kiểm checksum, chưa có chữ ký số.
+
 ## 3. Ảnh hưởng vận hành (cần thông báo cho người dùng)
 
 - **Cài mới:** lấy setup token trước khi mở `/setup`:
