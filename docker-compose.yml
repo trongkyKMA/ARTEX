@@ -37,8 +37,11 @@ services:
       # Cross-origin browser access (only needed for `next dev`); empty = same-origin only.
       ARTEX_CORS_ORIGINS: ${ARTEX_CORS_ORIGINS:-}
     ports:
-      - "8787:8787"
-      - "127.0.0.1:8788:8788"
+      # Host side configurable via .env: ARTEX_BIND (e.g. 127.0.0.1 to keep the UI
+      # local behind a reverse proxy) and ARTEX_HTTP_PORT. Defaults keep upstream
+      # behaviour (0.0.0.0:8787).
+      - "${ARTEX_BIND:-0.0.0.0}:${ARTEX_HTTP_PORT:-8787}:8787"
+      - "127.0.0.1:${ARTEX_PROXY_PORT:-8788}:8788"
     volumes:
       # 把数据目录（含 jwt.key、SQLite 等）绑定到项目根目录的 data/，
       # 方便在宿主机直接查看/备份，容器重建也不丢。

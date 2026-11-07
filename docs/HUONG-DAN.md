@@ -83,10 +83,11 @@ docker compose logs -f artex     # xem log, Ctrl-C để thoát
 - Build cho ARM: `ARTEX_ARCH=arm64 ./docker-build.sh`.
 - Sau khi đổi `package-lock.json` (nâng thư viện frontend), chạy `ARTEX_NPM_CI=1 ./docker-build.sh` để cài lại dependency.
 - **Dữ liệu được giữ lại** khi tạo lại container: volume `pgdata` (database), thư mục `./data` (traffic, evidence, file làm việc của task), `./skills`.
-- **Cổng:**
-  - `8787`: giao diện + API, mở ra mọi interface.
-  - `8788`: proxy ghi traffic, chỉ mở trên `127.0.0.1`.
-  - Muốn chỉ cho truy cập nội bộ máy, sửa `docker-compose.yml` thành `"127.0.0.1:8787:8787"` rồi đặt reverse proxy phía trước (§10).
+- **Cổng** (chỉnh trong `.env`, không cần sửa `docker-compose.yml`):
+  - `ARTEX_HTTP_PORT` (mặc định `8787`): giao diện + API.
+  - `ARTEX_BIND` (mặc định `0.0.0.0`, tức mọi interface): đặt `127.0.0.1` để chỉ truy cập được từ chính máy đó, rồi đặt reverse proxy phía trước (§10).
+  - `ARTEX_PROXY_PORT` (mặc định `8788`): proxy ghi traffic, luôn chỉ mở trên `127.0.0.1`.
+  - Ví dụ chạy song song với một bản ARTEX khác trên cùng máy: `ARTEX_HTTP_PORT=8790`, `ARTEX_PROXY_PORT=8791`.
 
 ---
 
