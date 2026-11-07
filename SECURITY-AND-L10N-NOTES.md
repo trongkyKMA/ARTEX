@@ -113,7 +113,7 @@ Sau khi sửa, `playwright-cli open https://…` tải được trang, **và tra
 
 Ngoài ra:
 - Mô tả skill được viết lại theo tình huống pentest: SPA, luồng đăng nhập, XSS phía client, cookie/CSP, bằng chứng. Đầu `SKILL.md` có thêm mục "Using it inside ARTEX".
-- Skill được gán **một lần** cho Worker và Pentest khi cài mới (`seedPlaywrightSkillVisibilityV1`, cờ `skill_visibility_playwright_v1`). Anh tắt đi thì lần khởi động sau không tự bật lại.
+- Skill được gán **một lần** cho Worker và Pentest khi cài mới (`seedPlaywrightSkillVisibilityV1`, cờ `skill_visibility_playwright_v1`). Nếu tắt đi thì lần khởi động sau không tự bật lại.
 
 ### Mở rộng mô tả skill `api-recon`
 

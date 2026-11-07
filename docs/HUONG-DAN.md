@@ -33,7 +33,7 @@ Tài liệu này dành cho bản ARTEX đã được chỉnh sửa trong repo n�
 | Skill | Sửa frontmatter `scopesentry`, mở rộng mô tả `api-recon` | §7 |
 | Docker | Build image **từ chính source này** (`./docker-build.sh`), không kéo image gốc | §3 |
 
-> ⚠️ **Không dùng image `autumn27/artex` của tác giả gốc**: image đó không có các thay đổi ở trên. Nút "Update" trong app đã được trỏ về repo của anh (§11).
+> ⚠️ **Không dùng image `autumn27/artex` của tác giả gốc**: image đó không có các thay đổi ở trên. Nút "Update" trong app đã được trỏ về repo này (§11).
 
 ---
 
@@ -49,6 +49,19 @@ Tài liệu này dành cho bản ARTEX đã được chỉnh sửa trong repo n�
 | RAM / Disk | ≥ 4 GB RAM, ≥ 20 GB disk (image có Chromium, nmap; traffic ghi lại chiếm dung lượng theo thời gian) |
 | Mạng | Ra Internet tới API LLM (DeepSeek/GLM…); tới các target nội bộ trong phạm vi được phép |
 
+### Quyền truy cập repo (repo private)
+
+Repo **https://github.com/trongkyKMA/ARTEX** là private. Người dùng cần được chủ repo mời làm collaborator (**Settings → Collaborators**), rồi chấp nhận lời mời qua email hoặc GitHub.
+
+| Việc cần làm | Cách xác thực |
+|---|---|
+| Clone / pull code | `gh auth login` (khuyến nghị), hoặc HTTPS với personal access token có quyền đọc repo |
+| Tải file trong **Releases** | Đăng nhập GitHub trên trình duyệt, hoặc `gh release download <tag> -R trongkyKMA/ARTEX` |
+| Pull image `ghcr.io/trongkykma/artex` | `docker login ghcr.io -u <username>` với token có quyền `read:packages` |
+| Nút Update trong app | Biến `ARTEX_UPDATE_GITHUB_TOKEN`: fine-grained token chỉ cho repo này, quyền **Contents: Read-only** (§11) |
+
+Không commit token, `.env` hay `config.json` vào repo; `.gitignore` đã loại trừ các file này.
+
 ---
 
 ## 3. Cài đặt bằng Docker (khuyến nghị)
@@ -58,7 +71,7 @@ Image Docker có sẵn các tool cần cho agent: nmap, curl, Playwright và Chr
 ### Cách A: dùng script cài đặt
 
 ```bash
-git clone <URL-repo-của-anh> ARTEX
+git clone https://github.com/trongkyKMA/ARTEX.git ARTEX
 cd ARTEX
 ./install.sh          # chọn 1) All Docker
 ```
@@ -68,7 +81,7 @@ Script sẽ hỏi mật khẩu Postgres (Enter để sinh ngẫu nhiên), tạo 
 ### Cách B: từng bước thủ công
 
 ```bash
-git clone <URL-repo-của-anh> ARTEX
+git clone https://github.com/trongkyKMA/ARTEX.git ARTEX
 cd ARTEX
 cp .env.example .env
 # Sửa .env: đặt POSTGRES_PASSWORD (bắt buộc, mật khẩu mạnh)
@@ -96,7 +109,7 @@ docker compose logs -f artex     # xem log, Ctrl-C để thoát
 Dùng khi không có Docker. Lưu ý: agent sẽ dùng các tool **cài trên máy** (nmap, curl, `playwright-cli`…). Thiếu tool nào thì agent không dùng được tool đó.
 
 ```bash
-git clone <URL-repo-của-anh> ARTEX
+git clone https://github.com/trongkyKMA/ARTEX.git ARTEX
 cd ARTEX
 ./install.sh          # chọn 2) Local build, script hỏi thông tin DB và tạo config.json (quyền 600)
 ```
@@ -121,7 +134,7 @@ CGO_ENABLED=0 go build -tags embedui -o artex ./cmd/artex
 ## 5. Lần đầu đăng nhập
 
 1. Mở **http://<máy-chủ>:8787**. Trang tự chuyển tới `/setup`.
-2. Lấy **Setup token** (token dùng một lần, chống người khác chiếm quyền admin trước anh):
+2. Lấy **Setup token** (token dùng một lần, chống người khác chiếm quyền admin trước bạn):
    - Docker: `docker compose logs artex | grep "setup token"` hoặc `docker compose exec artex cat /app/setup.token`
    - Chạy trực tiếp: file `setup.token` nằm cạnh file `artex`, hoặc xem dòng `[auth] … setup token …` trong log.
    - Muốn tự đặt trước: biến `ARTEX_SETUP_TOKEN` trong `.env`.
@@ -284,7 +297,7 @@ Lưu ý: sau reverse proxy, mọi client chung IP của proxy, nên giới hạn
 
 ## 11. Cập nhật phiên bản
 
-Cập nhật **từ repo của anh**, không lấy từ tác giả gốc:
+Cập nhật **từ repo này** (`trongkyKMA/ARTEX`), không lấy từ tác giả gốc:
 
 ```bash
 cd ARTEX
@@ -298,17 +311,17 @@ Hoặc thủ công: `git pull && ./docker-build.sh && docker compose up -d`.
 
 ### Cập nhật trong app (System → Settings → Update)
 
-Nút Update giờ lấy bản phát hành từ **repo của anh** (`trongkyKMA/ARTEX`, ghi cứng trong `selfupdate/github.go`), không còn từ repo gốc. Để dùng:
+Nút Update giờ lấy bản phát hành từ **repo này** (`trongkyKMA/ARTEX`, ghi cứng trong `selfupdate/github.go`), không còn từ repo gốc. Để dùng:
 
 1. **Phát hành một phiên bản:** gắn tag rồi push.
    ```bash
-   git tag v1.0.0
-   git push origin v1.0.0
+   git tag v1.0.3        # phiên bản kế tiếp
+   git push origin v1.0.3
    ```
    GitHub Actions (`.github/workflows/release.yml`) sẽ:
    - build frontend và binary cho Linux/macOS/Windows;
    - tạo **Release** đính kèm file zip và `SHA256SUMS`;
-   - đẩy image Docker lên `ghcr.io/trongkykma/artex:v1.0.0` và `:latest`.
+   - đẩy image Docker lên `ghcr.io/trongkykma/artex:<tag>` và `:latest`.
 
    Theo dõi ở tab **Actions** của repo.
 2. **Token:** repo private, nên process ARTEX cần biến `ARTEX_UPDATE_GITHUB_TOKEN`.
@@ -317,9 +330,9 @@ Nút Update giờ lấy bản phát hành từ **repo của anh** (`trongkyKMA/A
 3. **Bấm Update:** app tải đúng file cho nền tảng, kiểm tra `SHA256SUMS`, chạy thử binary mới, rồi khởi động lại bằng bản mới. Có nút quay về bản trước.
 
 Lưu ý:
-- **Chỉ binary mang phiên bản dạng tag** (vd. `v1.0.0`, tức bản lấy từ Release hoặc build bằng `ARTEX_BUILD_VERSION=v1.0.0 ./build.sh`) mới dùng được nút Update. Bản build bằng `docker-build.sh` mang phiên bản `dev`, nên nút bị vô hiệu.
+- **Chỉ binary mang phiên bản dạng tag** (vd. `v1.0.2`, tức bản lấy từ Release hoặc build bằng `ARTEX_BUILD_VERSION=v1.0.2 ./build.sh`) mới dùng được nút Update. Bản build bằng `docker-build.sh` mang phiên bản `dev`, nên nút bị vô hiệu.
 - **Với Docker,** nút Update chỉ thay binary *bên trong* container. Tạo lại container (`docker compose up -d`) là quay về binary của image. Vì vậy với Docker nên cập nhật bằng `./update.sh` hoặc `./docker-build.sh`, hoặc dùng image từ GHCR:
-  - đặt `ARTEX_IMAGE=ghcr.io/trongkykma/artex` và `ARTEX_TAG=v1.0.0` trong `.env`;
+  - đặt `ARTEX_IMAGE=ghcr.io/trongkykma/artex` và `ARTEX_TAG=v1.0.2` (hoặc `latest`) trong `.env`;
   - đăng nhập `docker login ghcr.io` (dùng token có quyền `read:packages`);
   - chạy `docker compose pull artex && docker compose up -d`.
 - Cơ chế cập nhật kiểm tra checksum nhưng **chưa có chữ ký số**: ai kiểm soát được repo/Release thì kiểm soát được bản cập nhật. Hãy bảo vệ tài khoản GitHub bằng 2FA.

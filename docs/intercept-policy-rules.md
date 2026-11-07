@@ -20,7 +20,7 @@ Toàn bộ rule đã được chạy thử bằng engine regex RE2 của Go (đ�
 **Từ phiên bản này không cần nhập tay.**
 - **Cách hoạt động:** khi ARTEX khởi động, migration `intercept_policy_rules_v4` (`db/policy_rules.go`) tự thêm 11 rule `[Policy] …` lấy từ `db/policy_rules.json`, và tự chỉnh 3 rule mặc định (xem mục "Chỉnh 3 rule mặc định" bên dưới).
 - **Chạy một lần:** migration chạy đúng **một lần cho mỗi database**. Cờ của nó là `intercept_policy_rules_v4 = done` trong bảng `settings`.
-- **Không ghi đè thay đổi của anh:** rule nào đã có (trùng tên) thì bỏ qua. Rule mặc định nào anh đã sửa thì không bị đụng tới.
+- **Không ghi đè thay đổi của người vận hành:** rule nào đã có (trùng tên) thì bỏ qua. Rule mặc định nào đã được sửa thì không bị đụng tới.
 - **Kiểm tra:** vào **System → Intercept rules**, phải thấy 11 rule tên bắt đầu bằng `[Policy]`, đang bật.
 - **Bật/tắt/sửa/xoá:** làm trực tiếp trên trang đó, có hiệu lực ngay.
 - **Đổi bộ rule cho cài mới:** sửa `db/policy_rules.json`, chạy `go test ./db/ -run TestPolicyRulesBehaviour` (57 ca), rồi build lại.
@@ -214,7 +214,7 @@ Pattern:
 
 ## Chỉnh 3 rule mặc định đang chặn quá rộng
 
-Ba rule mặc định của bản gốc chặn cả việc agent dọn file của chính nó, trái với tiêu chí 3. Đã kiểm chứng: `rm -rf ./out`, `rm -f /tmp/x`, `rm -rf /var/tmp/x` đều bị chặn. Các rule mới ở trên đã thay thế phần việc của chúng. Migration v4 **tự làm** các thay đổi dưới đây (chỉ khi rule còn nguyên bản gốc). Bảng này để anh tự kiểm tra hoặc làm tay nếu cần:
+Ba rule mặc định của bản gốc chặn cả việc agent dọn file của chính nó, trái với tiêu chí 3. Đã kiểm chứng: `rm -rf ./out`, `rm -f /tmp/x`, `rm -rf /var/tmp/x` đều bị chặn. Các rule mới ở trên đã thay thế phần việc của chúng. Migration v4 **tự làm** các thay đổi dưới đây (chỉ khi rule còn nguyên bản gốc). Bảng này để tự kiểm tra hoặc làm tay nếu cần:
 
 | Rule mặc định | Việc cần làm | Lý do |
 |---|---|---|
