@@ -1,0 +1,101 @@
+[
+  {
+    "name": "[Policy] Credential brute-force tools",
+    "enabled": true,
+    "priority": 95,
+    "match_target": "tool_input",
+    "match_type": "regex",
+    "pattern": "(?i)(?:^|[\\s;\u0026|\"'(\\x60]|\\\\n)(?:hydra|xhydra|medusa|ncrack|patator|crowbar|brutespray|kerbrute|legba)\\s",
+    "action": "deny"
+  },
+  {
+    "name": "[Policy] Brute-force scripts/modules (nmap, Metasploit)",
+    "enabled": true,
+    "priority": 95,
+    "match_target": "tool_input",
+    "match_type": "regex",
+    "pattern": "(?i)\\bnmap\\b[^\\n]{0,300}--script[= ]?[^\\s\"]{0,60}brute|auxiliary/scanner/[\\w/]{0,80}_login\\b",
+    "action": "deny"
+  },
+  {
+    "name": "[Policy] Password wordlist against a network target",
+    "enabled": true,
+    "priority": 95,
+    "match_target": "tool_input",
+    "match_type": "regex",
+    "pattern": "(?i)(?:rockyou|passwords?\\.(?:txt|lst)|pass(?:word)?list|seclists/passwords|\\.dic\\b)[\\s\\S]{0,400}?(?:https?://|\\bcurl\\b|\\bwget\\b|\\bssh\\b|\\bftp\\b|\\bsmb|\\bldap|\\brdp\\b|requests\\.|httpx|\\bnxc\\b|netexec|crackmapexec)|(?:https?://|\\bcurl\\b|\\bwget\\b|requests\\.|httpx|\\bnxc\\b|netexec|crackmapexec)[\\s\\S]{0,400}?(?:rockyou|passwords?\\.(?:txt|lst)|pass(?:word)?list|seclists/passwords|\\.dic\\b)",
+    "action": "deny"
+  },
+  {
+    "name": "[Policy] Fuzzing password/OTP fields",
+    "enabled": true,
+    "priority": 95,
+    "match_target": "tool_input",
+    "match_type": "regex",
+    "pattern": "(?i)\\b(?:ffuf|wfuzz)\\b[\\s\\S]{0,400}?(?:otp|totp|mfa|2fa|code|pass(?:word|wd)?|pwd|pin)\\\\?[\"']?\\s*[:=]\\s*\\\\?[\"']?FUZZ",
+    "action": "deny"
+  },
+  {
+    "name": "[Policy] OTP brute-force loop",
+    "enabled": true,
+    "priority": 95,
+    "match_target": "tool_input",
+    "match_type": "regex",
+    "pattern": "(?i)(?:^|[^a-z0-9])(?:otp|totp|2fa|mfa|sms_?code|verify_?code|verification_?code|one.?time)(?:[^a-z0-9]|$)[\\s\\S]{0,500}?(?:\\bseq\\s+-?w?\\s*\\d|range\\s*\\(\\s*\\d|\\{\\d+\\.\\.\\d+\\}|\\bfor\\s+\\w+\\s+in\\b|\\bwhile\\b|\\bxargs\\b|\\bparallel\\b|itertools\\.product|\\s-w\\s)|(?:\\bseq\\s+-?w?\\s*\\d|range\\s*\\(\\s*\\d|\\{\\d+\\.\\.\\d+\\}|\\bfor\\s+\\w+\\s+in\\b|\\bwhile\\b|\\bxargs\\b|\\bparallel\\b|itertools\\.product)[\\s\\S]{0,500}?(?:^|[^a-z0-9])(?:otp|totp|2fa|mfa|sms_?code|verify_?code|verification_?code|one.?time)(?:[^a-z0-9]|$)",
+    "action": "deny"
+  },
+  {
+    "name": "[Policy] Change password - OS commands",
+    "enabled": true,
+    "priority": 95,
+    "match_target": "tool_input",
+    "match_type": "regex",
+    "pattern": "(?i)(?:^|\"command\"\\s*:\\s*\"|\"text\"\\s*:\\s*\"|[;\u0026|]|\\\\n|\\bsudo\\s|\\$\\(|\\x60)\\s*(?:passwd|chpasswd|smbpasswd|ldappasswd|kpasswd|chage)\\b|\\busermod\\b[^\\n;\u0026|]{0,100}\\s(?:-p|--password)\\s|\\bnet\\s+user\\s+[^\\s/\"\\\\]+\\s+[^\\s/\"\\\\]+|Set-ADAccountPassword|Set-LocalUser[^\\n]{0,100}-Password|\\bdsmod\\s+user[^\\n]{0,200}-pwd",
+    "action": "deny"
+  },
+  {
+    "name": "[Policy] Change password - SQL",
+    "enabled": true,
+    "priority": 95,
+    "match_target": "tool_input",
+    "match_type": "regex",
+    "pattern": "(?i)\\bALTER\\s+(?:USER|LOGIN|ROLE)\\b[^;\\n]{0,200}\\b(?:PASSWORD|IDENTIFIED)\\b|\\bSET\\s+PASSWORD\\b|\\bsp_password\\b|\\bUPDATE\\s+[\\w.\\x60\"\\[\\]\\\\]*(?:user|account|member|admin|login)\\w*[\\x60\"\\]\\\\]*\\s+SET\\s+[^;\\n]{0,200}?(?:pass(?:word|wd)?|pwd|hash)\\w*[\\x60\"\\]\\\\]*\\s*=",
+    "action": "deny"
+  },
+  {
+    "name": "[Policy] Change password - HTTP request",
+    "enabled": true,
+    "priority": 95,
+    "match_target": "tool_input",
+    "match_type": "regex",
+    "pattern": "(?i)(?:\\bcurl\\b|\\bwget\\b|requests\\.|httpx\\.|aiohttp|fetch\\()[\\s\\S]{0,600}?(?:(?:new|confirm)[_-]?(?:pass(?:word|wd)?|pwd)\\b|(?:change|reset|update|modify)[_-]?(?:pass(?:word|wd)?|pwd)[\\s\\S]{0,300}?(?:\\s-d\\b|--data|--json|\\s-F\\b|json\\s*=|data\\s*=))",
+    "action": "deny"
+  },
+  {
+    "name": "[Policy] Delete system files/dirs (rm/rmdir/unlink/shred)",
+    "enabled": true,
+    "priority": 95,
+    "match_target": "tool_input",
+    "match_type": "regex",
+    "pattern": "(?i)\\b(?:rm|rmdir|unlink|shred|srm)\\b[^\\n;\u0026|]{0,200}?(?:\\s|\\\\?[\"'=])(?:/(?:etc|bin|sbin|usr|boot|lib|lib32|lib64|opt|srv|root|home|proc|sys|mnt|media|snap|run|var/(?:www|lib|log|spool|mail|opt|backups|cache|db|local))(?:/|\\s|\\\\?[\"';\u0026|*]|$)|/(?:var|app)(?:\\s|\\\\?[\"';\u0026|*]|$)|/app/(?:artex|skills|start\\.sh)|/(?:\\s|\\\\?[\"';\u0026|*]|$)|~(?:/|\\s|\\\\?[\"';\u0026|]|$)|\\.\\./)",
+    "action": "deny"
+  },
+  {
+    "name": "[Policy] Delete system files/dirs (find -delete)",
+    "enabled": true,
+    "priority": 95,
+    "match_target": "tool_input",
+    "match_type": "regex",
+    "pattern": "(?i)\\bfind\\s+\\\\?[\"']?(?:/(?:etc|bin|sbin|usr|boot|lib|lib64|opt|srv|root|home|var/(?:www|lib|log)|app)\\b|/(?:\\s|\\\\?[\"']))[^\\n;\u0026|]{0,200}(?:-delete|-exec\\s+(?:rm|shred|unlink))",
+    "action": "deny"
+  },
+  {
+    "name": "[Policy] Delete system files/dirs (Python/Node APIs)",
+    "enabled": true,
+    "priority": 95,
+    "match_target": "tool_input",
+    "match_type": "regex",
+    "pattern": "(?i)(?:os\\.(?:remove|unlink|rmdir|removedirs)|shutil\\.rmtree|\\.(?:unlink|unlinkSync|rm|rmSync|rmdir|rmdirSync)\\()\\s*\\(?\\s*\\\\?[\"'](?:/(?:etc|bin|sbin|usr|boot|lib|lib64|opt|srv|root|home|var/(?:www|lib|log)|app)\\b|/\\\\?[\"'])",
+    "action": "deny"
+  }
+]

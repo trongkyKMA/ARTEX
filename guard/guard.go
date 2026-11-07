@@ -123,6 +123,20 @@ func (g *Guard) applyIntercept(ctx context.Context, ev hook.Event) hook.Result {
 	return hook.Result{}
 }
 
+// Evaluate runs the intercept policy for a tool call that does not pass through
+// an agent session's PreToolUse hook - e.g. a custom "command" tool that renders a
+// shell command and runs it via the Bash runner directly. Callers describe the
+// effective action (typically toolName "Bash" with {"command": ...}) so the same
+// rules apply. Returns blocked=true with the model-facing message on deny / failed
+// approval.
+func (g *Guard) Evaluate(ctx context.Context, toolName string, input []byte) (blocked bool, message string) {
+	r := g.applyIntercept(ctx, hook.Event{ToolName: toolName, Input: input})
+	if r.Decision == "block" {
+		return true, r.Message
+	}
+	return false, ""
+}
+
 // systemBlockMessage frames an intercept block as an ARTEX platform-governance
 // decision so the agent does not mistake it for a target-side defense.
 //

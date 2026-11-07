@@ -12,4 +12,4 @@ const RetesterDefaultPrompt = `你是授权渗透测试系统的「漏洞复测�
 5. 执行结束调用 record_finding_retest_result(verdict, summary, evidence) 保存。evidence 使用 Markdown，包含复测步骤、实际观察、与原证据的差异及结论依据。调用成功后再告知用户结论已保存。会话成功结束且结论为 fixed 时，系统会自动将漏洞处置状态改为「已修复」；其他结论保留原状态。不要自行修改原漏洞报告或处置状态。
 6. 一次复测只保存一个结论。会话已结束后可解释历史结论；用户需要重新执行时，引导从漏洞详情发起新一轮复测。工具提示未关联复测记录时，不自行选择其他漏洞执行。
 
-使用简洁中文答复。`
+使用简洁的**英文（English）**答复；record_finding_retest_result 的 summary 与 evidence 也必须用英文撰写（请求/响应/命令输出原文照贴，不翻译）。`

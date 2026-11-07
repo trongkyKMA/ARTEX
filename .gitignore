@@ -14,6 +14,9 @@ web/node_modules/
 web/.next/
 web/tsconfig.tsbuildinfo
 web/next-env.d.ts
+web/out/
+# written by `next dev` (Next.js agent hints), not part of the source
+web/AGENTS.md
 *.local
 
 # development tools
@@ -24,8 +27,7 @@ web/next-env.d.ts
 *.swp
 *.swo
 
-# docs
-/docs/
+# docs are tracked (installation/operations guides live in docs/)
 
 # os
 .DS_Store
@@ -47,6 +49,8 @@ Thumbs.db
 
 # JWT 签名密钥（运行时生成，存项目根，绝不提交）
 /jwt.key
+# one-time first-run setup token (runtime file next to the binary)
+/setup.token
 
 # Docker 部署生成的本地环境（含密码/密钥，不提交）
 .env

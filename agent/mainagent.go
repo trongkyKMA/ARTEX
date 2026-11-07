@@ -7,6 +7,7 @@ import (
 	"github.com/Autumn-27/artex/db"
 	"github.com/Autumn-27/artex/intercept"
 	"github.com/Autumn-27/norma/agentcore"
+	"github.com/Autumn-27/norma/harness"
 	"github.com/Autumn-27/norma/llm"
 	"github.com/Autumn-27/norma/permission"
 	actool "github.com/Autumn-27/norma/tool"
@@ -18,6 +19,7 @@ import (
 // (→planner) or direct high-priority intents (→frontier). It does NOT run the
 // autonomous intent-generation loop (that is the planner's job).
 type MainAgent struct {
+	hooks           harness.HookRunner // per-task guard (intercept rules); nil = none
 	findingRecorder FindingRecorder
 	prov            llm.Provider
 	model           string
@@ -109,6 +111,11 @@ func mainAgentSystem(goal, dataDir, workDir string) string {
 // non-nil, receives each execution step (thinking / tool_use / tool_result /
 // text / result) so the main-agent session shows its work — exactly like the
 // worker/planner sessions — not just the final answer.
+// SetHooks attaches the per-task guard so this agent's own tool calls (Bash,
+// Write/Edit, WebFetch, shell_open, MCP ...) pass through the intercept rules like
+// the worker's do. nil leaves the agent unguarded (legacy behaviour).
+func (m *MainAgent) SetHooks(h harness.HookRunner) { m.hooks = h }
+
 func (m *MainAgent) Chat(ctx context.Context, taskID int64, mainSeg int, as *db.AssetStore, ts *db.ExplorationStore, goal, message string, emit func(db.Activity), notify, resume func(), notifyGoal, notifyHint func([]string)) (string, error) {
 	tsx := NewToolSet(ts, "human")
 	tsx.SetFindingRecorder(m.findingRecorder)
@@ -163,6 +170,9 @@ func (m *MainAgent) Chat(ctx context.Context, taskID int64, mainSeg int, as *db.
 		Settlement:   wrapupSettlement("mainagent", nil),
 		NonStreaming: m.nonStreaming(), // 该 profile 选非流式时走 Provider.Complete
 		MaxTokens:    m.maxTokens(),    // 0 = 不发上限,由服务端默认值决定
+	}
+	if m.hooks != nil {
+		opts.Hooks = m.hooks
 	}
 	if m.tx != nil { // persist raw human↔AI conversation; one accumulating file per segment
 		opts.Transcript = m.tx

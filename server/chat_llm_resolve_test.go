@@ -30,8 +30,8 @@ func TestChatUnavailableReasonDistinguishesStates(t *testing.T) {
 		_ = m.pg.DeleteProfile(p.ID)
 	}
 
-	if reason := s.chatUnavailableReason(); !strings.Contains(reason, "尚未配置") {
-		t.Fatalf("no-profile reason=%q, want 尚未配置", reason)
+	if reason := s.chatUnavailableReason(); !strings.Contains(reason, "No LLM configured") {
+		t.Fatalf("no-profile reason=%q, want No LLM configured", reason)
 	}
 
 	id, err := m.pg.SaveProfile(&db.LLMProfile{Name: "p1", Format: "anthropic", Model: "claude-x", APIKey: "sk-test"})
@@ -44,8 +44,8 @@ func TestChatUnavailableReasonDistinguishesStates(t *testing.T) {
 	})
 
 	// Profile exists but is not activated.
-	if reason := s.chatUnavailableReason(); !strings.Contains(reason, "没有已激活") {
-		t.Fatalf("inactive reason=%q, want 没有已激活", reason)
+	if reason := s.chatUnavailableReason(); !strings.Contains(reason, "No LLM profile is active") {
+		t.Fatalf("inactive reason=%q, want No LLM profile is active", reason)
 	}
 
 	// Once activated, the reason no longer claims a missing/inactive config.

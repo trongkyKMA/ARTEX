@@ -12,7 +12,7 @@ import (
 
 const FindingRetestAgentKey = "retester"
 
-var ErrRetestNotRunning = errors.New("本次复测已结束或尚未开始，请从漏洞详情发起新的复测")
+var ErrRetestNotRunning = errors.New("this retest has ended or has not started; start a new retest from the finding details")
 
 // FindingRetest is an immutable historical test once its conversation turn ends.
 // Snapshot is only loaded for the agent, never sent with the history list.
@@ -102,7 +102,7 @@ func (d *DB) CreateFindingRetest(ctx context.Context, findingID int64, notes str
 		title = string(runes[:100])
 	}
 	c, err := scanConv(tx.QueryRowContext(ctx, `INSERT INTO conversations(agent_key,title) VALUES ($1,$2) RETURNING `+convCols,
-		FindingRetestAgentKey, fmt.Sprintf("复测 #%d · %s", findingID, title)))
+		FindingRetestAgentKey, fmt.Sprintf("Retest #%d · %s", findingID, title)))
 	if err != nil {
 		return nil, nil, false, err
 	}
@@ -113,7 +113,7 @@ func (d *DB) CreateFindingRetest(ctx context.Context, findingID int64, notes str
 	}
 	msg := r.InitialMessage()
 	_, err = tx.ExecContext(ctx, `INSERT INTO conversation_activities(conversation_id,worker,kind,summary,detail) VALUES ($1,$2,'user',$3,$4)`,
-		c.ID, FindingRetestAgentKey, fmt.Sprintf("请复测漏洞 #%d", findingID), msg)
+		c.ID, FindingRetestAgentKey, fmt.Sprintf("Retest finding #%d", findingID), msg)
 	if err != nil {
 		return nil, nil, false, err
 	}
@@ -228,7 +228,7 @@ func (d *DB) FinishFindingRetest(id int64, status, reason string) error {
 	var finalStatus, verdict string
 	err = tx.QueryRow(`UPDATE finding_retests SET
 	status=CASE WHEN $2='completed' AND verdict='' THEN 'failed' ELSE $2 END,
-	error=CASE WHEN $2='completed' AND verdict='' THEN 'Agent 未保存复测结论，请查看会话后重新复测' ELSE $3 END,
+	error=CASE WHEN $2='completed' AND verdict='' THEN 'The agent did not save a retest verdict; review the conversation and retest' ELSE $3 END,
 	finished_at=now() WHERE id=$1 AND status IN ('pending','running') RETURNING status,verdict`, id, status, reason).Scan(&finalStatus, &verdict)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil // A replay must not overwrite a later manual triage decision.
@@ -254,6 +254,6 @@ func (d *DB) FinishFindingRetest(id int64, status, reason string) error {
 }
 
 func (d *DB) RecoverFindingRetests() error {
-	_, err := d.Exec(`UPDATE finding_retests SET status='stopped', error='服务重启，复测已中断，请重新发起', finished_at=now() WHERE status IN ('pending','running')`)
+	_, err := d.Exec(`UPDATE finding_retests SET status='stopped', error='Service restarted; the retest was interrupted, please start it again', finished_at=now() WHERE status IN ('pending','running')`)
 	return err
 }

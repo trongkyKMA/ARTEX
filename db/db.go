@@ -189,28 +189,28 @@ func intp(v int) *int { return &v }
 // 注：planner/worker/mainagent/auto 的交互式 shell 默认由下方 interactive_shell_default_v1
 // 块统一置 true（尊重后续 toggle）；这里的 interactiveShell 只给需要「建行即默认开」的新 agent。
 var builtinAgents = []builtinAgent{
-	{"goals", "目标拆解", "goals", "把渗透任务目标拆解成若干独立、可验证的子目标。", []promptVar{
-		{"EngagementDescription", "任务描述（测试对象/背景）", "测试 example.com 站点", "exploration"},
+	{"goals", "Goal Decomposition", "goals", "Breaks a penetration-test goal into independent, verifiable sub-goals.", []promptVar{
+		{"EngagementDescription", "Task description (target / background)", "测试 example.com 站点", "exploration"},
 		// Now 是全局 runtime 变量(见 server.globalPromptVars),不再在各 agent 目录里
 		// 重复定义,否则 withGlobalVars 追加时会与全局项撞名。
 	}, false, nil},
-	{"planner", "规划", "planner", "读取态势、判定目标，只在确有未覆盖的新方向时补充探索意图（每任务一个规划循环）。", []promptVar{
-		{"Goal", "任务总目标", "拿下 example.com 的管理员权限", "exploration"},
-		{"AssetSummary", "资产计数/类型分布摘要(可选)", "domain:3 ip:5 site:2", "distilled"},
+	{"planner", "Planner", "planner", "Reads the situation and judges the goal; adds exploration intents only when there is a genuinely uncovered new direction (one planning loop per task).", []promptVar{
+		{"Goal", "Overall task goal", "拿下 example.com 的管理员权限", "exploration"},
+		{"AssetSummary", "Asset count / type distribution summary (optional)", "domain:3 ip:5 site:2", "distilled"},
 	}, false, nil},
-	{"mainagent", "主", "main", "人机接口：观察进展，把人的意图落成 hint 或高优先级意图。", []promptVar{
-		{"Goal", "当前任务目标", "拿下 example.com 的管理员权限", "exploration"},
-		{"AssetSummary", "开局态势摘要(可选)", "domain:3 ip:5", "distilled"},
-		{"FindingsSummary", "已确认漏洞摘要(可选)", "high:1 medium:2", "distilled"},
+	{"mainagent", "Main", "main", "Human-machine interface: observes progress and turns human intent into hints or high-priority intents.", []promptVar{
+		{"Goal", "Current task goal", "拿下 example.com 的管理员权限", "exploration"},
+		{"AssetSummary", "Opening situation summary (optional)", "domain:3 ip:5", "distilled"},
+		{"FindingsSummary", "Confirmed findings summary (optional)", "high:1 medium:2", "distilled"},
 	}, false, nil},
-	{"worker", "执行", "worker", "领取一条意图执行，把发现的事实/漏洞写回知识图谱后停止。", []promptVar{
-		{"ProxyAddr", "记录代理地址(驱动 if 双文案)", "127.0.0.1:8080", "runtime"},
-		{"WorkerName", "worker 自我标识(可选)", "worker-1", "runtime"},
+	{"worker", "Worker", "worker", "Claims one intent to execute, writes discovered facts/findings back to the knowledge graph, then stops.", []promptVar{
+		{"ProxyAddr", "Recording proxy address (drives the if branch)", "127.0.0.1:8080", "runtime"},
+		{"WorkerName", "Worker self-identifier (optional)", "worker-1", "runtime"},
 	}, false, nil},
 	// Auto:内置「平台操作」agent。不参与渗透编排循环,经对话页驱动,用工具操作平台。
-	{"auto", "Auto", "assistant", "平台操作助手：用工具管理任务(建/看/暂停/给提示)与资产，并可创建/修改 skill、自定义工具、MCP。", nil, false, nil},
+	{"auto", "Auto", "assistant", "Platform operations assistant: manages tasks (create/view/pause/hint) and assets with tools, and can create/modify skills, custom tools and MCP.", nil, false, nil},
 	// 渗透测试:内置「独立渗透」agent。经对话页驱动,一人从侦察到收尾走完整条渗透链,自己规划自己执行自己验证。默认开启交互式 shell。
-	{"pentest", "渗透测试", "assistant", "独立渗透 agent：一人从侦察→找攻击面→深入利用→验证→收尾走完整条链，自己规划、自己执行、自己对抗式验证。", nil, true, intp(0)},
+	{"pentest", "Pentest", "assistant", "Standalone pentest agent: runs the full chain alone from recon, attack-surface discovery, deep exploitation and verification to wrap-up, planning, executing and adversarially verifying by itself.", nil, true, intp(0)},
 }
 
 // seedBuiltins inserts the fixed built-in agents and their variable catalog (idempotent).
@@ -279,6 +279,9 @@ ON CONFLICT (name) DO NOTHING`,
 	if err := d.seedDefaultInterceptRulesV3(); err != nil {
 		return fmt.Errorf("seed intercept rules v3: %w", err)
 	}
+	if err := d.seedPolicyInterceptRulesV4(); err != nil {
+		return fmt.Errorf("seed intercept policy rules v4: %w", err)
+	}
 	if err := d.seedDefaultAssetInterceptRules(); err != nil {
 		return fmt.Errorf("seed asset intercept rules: %w", err)
 	}
@@ -298,10 +301,10 @@ func (d *DB) seedDefaultAssetInterceptRules() error {
 		pattern string
 		note    string
 	}{
-		{"fuzzy_domain", ".gov", "[内置] 政府网站 (.gov)"},
-		{"fuzzy_domain", ".gov.cn", "[内置] 政府网站 (.gov.cn)"},
-		{"fuzzy_domain", ".edu", "[内置] 教育网站 (.edu)"},
-		{"fuzzy_domain", ".edu.cn", "[内置] 教育网站 (.edu.cn)"},
+		{"fuzzy_domain", ".gov", "[Built-in] Government sites (.gov)"},
+		{"fuzzy_domain", ".gov.cn", "[Built-in] Government sites (.gov.cn)"},
+		{"fuzzy_domain", ".edu", "[Built-in] Education sites (.edu)"},
+		{"fuzzy_domain", ".edu.cn", "[Built-in] Education sites (.edu.cn)"},
 	}
 	for _, r := range rules {
 		if _, err := d.Exec(`
@@ -361,7 +364,7 @@ func (d *DB) seedDefaultInterceptRules() error {
 	rules := []rule{
 		// ── 系统破坏性命令 (priority 100) ──────────────────────────────────
 		{
-			name:     "[内置] 递归强制删除 rm -rf",
+			name:     "[Built-in] Recursive force delete rm -rf",
 			target:   "tool_input",
 			typ:      "regex",
 			pattern:  `(?i)\brm\b.{0,80}(?:-[a-z]*r[a-z]*f[a-z]*|-[a-z]*f[a-z]*r[a-z]*|--recursive|--no-preserve-root)`,
@@ -370,7 +373,7 @@ func (d *DB) seedDefaultInterceptRules() error {
 			priority: 100,
 		},
 		{
-			name:     "[内置] 删除系统关键目录",
+			name:     "[Built-in] Delete critical system directories",
 			target:   "tool_input",
 			typ:      "regex",
 			pattern:  `\brm\b[^"'\n]{0,60}["'\s](/|/etc|/bin|/usr|/boot|/var|/lib|/sys|/proc|/dev|/sbin|/root)`,
@@ -379,7 +382,7 @@ func (d *DB) seedDefaultInterceptRules() error {
 			priority: 100,
 		},
 		{
-			name:     "[内置] 磁盘格式化 mkfs",
+			name:     "[Built-in] Disk format mkfs",
 			target:   "tool_input",
 			typ:      "regex",
 			pattern:  `\bmkfs\b`,
@@ -388,7 +391,7 @@ func (d *DB) seedDefaultInterceptRules() error {
 			priority: 100,
 		},
 		{
-			name:     "[内置] 覆写磁盘设备 dd",
+			name:     "[Built-in] Overwrite disk device dd",
 			target:   "tool_input",
 			typ:      "regex",
 			pattern:  `\bdd\b[^|\n]{0,100}\bof=\s*/dev/[a-zA-Z]`,
@@ -397,7 +400,7 @@ func (d *DB) seedDefaultInterceptRules() error {
 			priority: 100,
 		},
 		{
-			name:     "[内置] Fork 炸弹",
+			name:     "[Built-in] Fork bomb",
 			target:   "tool_input",
 			typ:      "regex",
 			pattern:  `:\(\)\s*\{[^}]*:\|:`,
@@ -406,7 +409,7 @@ func (d *DB) seedDefaultInterceptRules() error {
 			priority: 100,
 		},
 		{
-			name:     "[内置] 关机 / 重启",
+			name:     "[Built-in] Shutdown / reboot",
 			target:   "tool_input",
 			typ:      "regex",
 			pattern:  `\b(?:shutdown|reboot|halt|poweroff|init\s+[06])\b`,
@@ -415,7 +418,7 @@ func (d *DB) seedDefaultInterceptRules() error {
 			priority: 100,
 		},
 		{
-			name:     "[内置] 杀死全部进程",
+			name:     "[Built-in] Kill all processes",
 			target:   "tool_input",
 			typ:      "regex",
 			pattern:  `\bkill\s+-9\s+-1\b|\bkillall\s+-9\b`,
@@ -424,7 +427,7 @@ func (d *DB) seedDefaultInterceptRules() error {
 			priority: 100,
 		},
 		{
-			name:     "[内置] 磁盘擦除 shred / wipe",
+			name:     "[Built-in] Disk wipe shred / wipe",
 			target:   "tool_input",
 			typ:      "regex",
 			pattern:  `\b(?:shred|wipe)\b[^|\n]{0,80}/dev/[a-zA-Z]`,
@@ -433,7 +436,7 @@ func (d *DB) seedDefaultInterceptRules() error {
 			priority: 100,
 		},
 		{
-			name:     "[内置] 清空防火墙规则",
+			name:     "[Built-in] Flush firewall rules",
 			target:   "tool_input",
 			typ:      "regex",
 			pattern:  `\biptables\s+(?:-F|--flush)\b|\bnft\s+flush\s+ruleset\b`,
@@ -484,7 +487,7 @@ func (d *DB) seedDefaultInterceptRules() error {
 		//   2. Python HTTP 客户端 .delete() 方法
 		//   3. JS/通用脚本里的 method: 'DELETE' / method="DELETE"
 		{
-			name:     "[内置] curl / wget 发送 DELETE 请求",
+			name:     "[Built-in] curl / wget DELETE request",
 			target:   "tool_input",
 			typ:      "regex",
 			pattern:  `(?i)\bcurl\b[^|\n&;"]{0,300}(?:-X\s*DELETE|--request\s+DELETE|-XDELETE)|\bwget\b[^|\n&;"]{0,300}--method[=\s]+DELETE`,
@@ -493,7 +496,7 @@ func (d *DB) seedDefaultInterceptRules() error {
 			priority: 80,
 		},
 		{
-			name:     "[内置] Python HTTP 客户端 DELETE（requests/httpx/aiohttp）",
+			name:     "[Built-in] Python HTTP client DELETE (requests/httpx/aiohttp)",
 			target:   "tool_input",
 			typ:      "regex",
 			pattern:  `(?i)\b(?:requests|httpx|aiohttp|urllib\.request)\.delete\s*\(|session\.delete\s*\(|client\.delete\s*\(`,
@@ -502,7 +505,7 @@ func (d *DB) seedDefaultInterceptRules() error {
 			priority: 80,
 		},
 		{
-			name:     "[内置] 脚本中声明 HTTP DELETE 方法（JS/通用）",
+			name:     "[Built-in] HTTP DELETE method declared in script (JS/generic)",
 			target:   "tool_input",
 			typ:      "regex",
 			pattern:  `(?i)axios\.delete\s*\(|method\s*[:=]\s*['"]DELETE['"]`,
@@ -511,7 +514,7 @@ func (d *DB) seedDefaultInterceptRules() error {
 			priority: 80,
 		},
 		{
-			name:     "[内置] 批量清空 / 清除接口路径",
+			name:     "[Built-in] Bulk clear / purge endpoint paths",
 			target:   "tool_input",
 			typ:      "regex",
 			pattern:  `(?i)/(?:clear|wipe|flush|purge|truncate|drop|destroy|factory[-_]reset|reset[-_]all)(?:[/?#"'\s]|$)`,
@@ -553,7 +556,7 @@ func (d *DB) seedDefaultInterceptRulesV2() error {
 		priority int
 	}{
 		{
-			name:     "[内置] 破坏性系统命令",
+			name:     "[Built-in] Destructive system commands",
 			pattern:  `(?i)\b(rm\s+-rf\s+/|mkfs|dd\s+if=|:\(\)\s*\{|shutdown|reboot|>\s*/dev/sd)`,
 			action:   "deny",
 			message:  "破坏性命令被拒绝（rm -rf / / mkfs / dd / fork bomb / 关机重启 / 覆写磁盘设备）",
@@ -561,7 +564,7 @@ func (d *DB) seedDefaultInterceptRulesV2() error {
 			priority: 100,
 		},
 		{
-			name:     "[内置] 数据外泄管道",
+			name:     "[Built-in] Data exfiltration pipe",
 			pattern:  `(?i)(curl|wget|nc|ncat)\b[^|]*\b(\|\s*(curl|wget|nc))`,
 			action:   "deny",
 			message:  "疑似数据外泄管道被拒绝（命令输出经 curl/wget/nc 外传）",
@@ -602,7 +605,7 @@ func (d *DB) seedDefaultInterceptRulesV3() error {
 	if v, _, _ := d.GetSetting("intercept_default_rules_v3"); v == "done" {
 		return nil
 	}
-	const name = "[内置] 删除类接口路径"
+	const name = "[Built-in] Delete-style endpoint paths"
 	if _, err := d.Exec(`
 INSERT INTO intercept_rules(name, enabled, priority, match_target, match_type, pattern, action, message, timeout_enabled, timeout_seconds, timeout_action)
 SELECT $1, true, 80, 'tool_input', 'regex', $2, 'deny', $3, false, 60, 'deny'

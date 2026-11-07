@@ -1,6 +1,6 @@
 ---
 name: api-recon
-description: 收集网站API接口时调用该skill。
+description: 目标是 Web 站点/应用（HTTP/HTTPS、SPA/Vue/React、管理后台、门户、登录页）时调用。漏洞测试前摸清 Web 攻击面：收集 API 接口（路径/方法/参数/响应）、前端路由与隐藏页面、JS bundle 中的接口、Swagger/OpenAPI、登录后才可见的接口。发现 80/443/8080 等 Web 端口或需要接口清单/参数时优先使用。
 ---
 
 # API Recon（前端接口侦察）

@@ -8,7 +8,9 @@ export function proxy(request: NextRequest) {
   if (process.env.NEXT_PUBLIC_MOCK === "1") return NextResponse.next();
 
   const { pathname } = request.nextUrl;
-  const token = request.cookies.get("artex_token")?.value;
+  // Routing hint only (the backend validates the real Bearer token). Legacy
+  // artex_token cookies are still honoured so existing sessions don't loop.
+  const token = request.cookies.get("artex_authed")?.value || request.cookies.get("artex_token")?.value;
   const isAuthPage = AUTH_PAGES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
   // 未登录 → 跳转登录页

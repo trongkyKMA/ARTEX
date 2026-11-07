@@ -1,3 +1,38 @@
+# ARTEX (fork: English UI + hardening)
+
+Autonomous AI penetration-testing platform (Go backend + Next.js frontend). This
+fork keeps the upstream engine and adds:
+
+- **English user interface**: UI, API errors, logs, notifications and reports. LLM prompts stay Chinese on purpose (tuned for DeepSeek / GLM).
+- **Security fixes**:
+  - one-time setup token, no `*` CORS, no cookie auth;
+  - login throttling, JWT key rotation, masked MCP secrets, anti-framing headers;
+  - patched npm / Go dependencies.
+- **Intercept hardening** plus a built-in **operator policy**: no credential/OTP brute force, no password changes, no deletion of system files.
+- **LLM provider presets** with suggested models.
+- **Docker image built from this source** (`./docker-build.sh`).
+
+| Document | Contents |
+|---|---|
+| [docs/HUONG-DAN.md](docs/HUONG-DAN.md) | **Hướng dẫn cài đặt & vận hành** (tiếng Việt): Docker/local install, first login, LLM per agent, skills, intercept, tasks, backup, update, troubleshooting |
+| [SECURITY-AND-L10N-NOTES.md](SECURITY-AND-L10N-NOTES.md) | What changed: localisation scope, fixed vulnerabilities (CVSS/CWE), dependency audit, intercept bypass fixes, tests |
+| [docs/intercept-policy-rules.md](docs/intercept-policy-rules.md) | The 11 policy intercept rules, how they are seeded, how to tune them, test matrix |
+
+Quick start (Docker):
+
+```bash
+cp .env.example .env        # set POSTGRES_PASSWORD
+./docker-build.sh           # build image artex-local:latest from this source
+docker compose up -d
+docker compose logs artex | grep "setup token"   # one-time token for http://<host>:8787/setup
+```
+
+> Do **not** use the upstream `autumn27/artex` image or the in-app "Update" button: both install the upstream build and drop this fork's changes.
+
+The original (Chinese) upstream README follows.
+
+---
+
 <div align="center">
 
 # ARTEX

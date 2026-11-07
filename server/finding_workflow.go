@@ -129,14 +129,14 @@ func (s *Server) agentFindingTrafficAccess(ctx context.Context, id int64, write 
 	if ri := agent.RunInfoFrom(ctx); ri.TaskID > 0 {
 		task := s.m.ResolveTask(strconv.FormatInt(ri.TaskID, 10))
 		if task == nil {
-			return errors.New("任务不存在")
+			return errors.New("task does not exist")
 		}
 		_, inherited, allowed := findingProvenanceInTask(task, f.TaskID)
 		if !allowed {
-			return errors.New("当前任务不可读取该漏洞")
+			return errors.New("This finding is not readable from the current task")
 		}
 		if write && inherited {
-			return errors.New("继承漏洞的流量证据只读，请到来源任务修改")
+			return errors.New("Traffic evidence of inherited findings is read-only, please edit in the source task")
 		}
 	}
 	return nil

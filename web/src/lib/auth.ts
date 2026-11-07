@@ -1,4 +1,8 @@
 const TOKEN_KEY = "artex_token";
+// Non-secret presence flag read by the Next.js middleware (proxy.ts) for routing
+// only. The JWT itself is no longer copied into a cookie: the backend does not
+// accept cookie auth (CSRF), and a JS-readable cookie only widened token exposure.
+const SESSION_FLAG = "artex_authed";
 const COOKIE_MAX_AGE = 7 * 24 * 60 * 60; // 7 天（秒）
 
 export interface CurrentUser {
@@ -20,12 +24,15 @@ export const auth = {
   setToken(token: string): void {
     localStorage.setItem(TOKEN_KEY, token);
     // 同步写 cookie，供 Next.js middleware 服务端读取
-    document.cookie = `${TOKEN_KEY}=${encodeURIComponent(token)}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
+    document.cookie = `${SESSION_FLAG}=1; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Strict`;
+    // drop any legacy cookie that still carries the JWT
+    document.cookie = `${TOKEN_KEY}=; path=/; max-age=0`;
   },
 
   clearToken(): void {
     localStorage.removeItem(TOKEN_KEY);
     document.cookie = `${TOKEN_KEY}=; path=/; max-age=0`;
+    document.cookie = `${SESSION_FLAG}=; path=/; max-age=0`;
   },
 
   // 从 JWT payload 的 sub 字段解析当前用户，仅用于展示，不做签名验证。

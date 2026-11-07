@@ -12,10 +12,12 @@
 package intercept
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -176,7 +178,10 @@ func (i *Interceptor) loadLocked() error {
 		if r.MatchType == "regex" {
 			re, err := regexp.Compile(r.Pattern)
 			if err != nil {
-				continue // skip rules with bad regex rather than crashing
+				// Rules are validated on create/update; a bad pattern can only come from
+				// a direct DB edit. Skip it rather than crash, but make it visible.
+				log.Printf("[intercept] rule #%d %q has an invalid regex and is skipped: %v", r.ID, r.Name, err)
+				continue
 			}
 			cr.re = re
 		}
@@ -230,7 +235,17 @@ func (i *Interceptor) rules() ([]compiledRule, error) {
 // IsToolEnabled returns true if the named tool is in the intercept-enabled set
 // (i.e. it should enter the rule-matching path). Uses the same double-check lock
 // pattern as rules().
+//
+// Security hardening:
+//   - MCP tools (mcp__<server>__<tool>) always enter the rule path: they reach
+//     targets (browser automation, scanners) but are not listed in the tool-config
+//     UI, so they could never be selected and silently bypassed every rule.
+//   - If the configuration cannot be loaded, fall back to the built-in default set
+//     instead of treating every tool as "not intercepted" (fail closed).
 func (i *Interceptor) IsToolEnabled(name string) bool {
+	if strings.HasPrefix(name, "mcp__") {
+		return true
+	}
 	i.mu.RLock()
 	if i.enabledTools != nil {
 		v := i.enabledTools[name]
@@ -243,6 +258,14 @@ func (i *Interceptor) IsToolEnabled(name string) bool {
 	defer i.mu.Unlock()
 	if i.enabledTools == nil {
 		_ = i.loadLocked()
+	}
+	if i.enabledTools == nil { // load failed: fail closed onto the default set
+		for _, n := range defaultEnabledTools {
+			if n == name {
+				return true
+			}
+		}
+		return false
 	}
 	return i.enabledTools[name]
 }
@@ -507,11 +530,20 @@ func judgeActionLabel(action string) string {
 // (Decision{}, false) if no rule matches.
 func (i *Interceptor) Match(toolName string, input []byte) (Decision, bool) {
 	rules, err := i.rules()
-	if err != nil || len(rules) == 0 {
+	if err != nil {
+		// Fail closed: an unreadable rule set must not silently mean "no rules".
+		log.Printf("[intercept] failed to load rules, denying %s: %v", toolName, err)
+		return Decision{
+			Action:  "deny",
+			Message: "拦截规则加载失败，平台安全管控默认拒绝执行（fail-closed）",
+		}, true
+	}
+	if len(rules) == 0 {
 		return Decision{}, false
 	}
+	canon := canonicalInput(input)
 	for _, r := range rules {
-		if ruleMatches(r, toolName, input) {
+		if ruleMatches(r, toolName, input, canon) {
 			msg := r.Message
 			if msg == "" {
 				msg = defaultMessage(r.Action, r.Name)
@@ -531,20 +563,56 @@ func (i *Interceptor) Match(toolName string, input []byte) (Decision, bool) {
 	return Decision{}, false
 }
 
-func ruleMatches(r compiledRule, toolName string, input []byte) bool {
-	var subject string
+// ruleMatches tests one rule. For tool_input rules the pattern is evaluated on the
+// raw input AND on its canonical re-encoding (canon, may be nil): models emitting
+// OpenAI-format tool calls pass their own JSON text through verbatim, so a JSON
+// escape such as "r\u006d -rf" reaches the shell as "rm -rf" while the raw bytes
+// would never match an "rm" rule.
+func ruleMatches(r compiledRule, toolName string, input, canon []byte) bool {
+	match := func(subject string) bool {
+		if r.MatchType == "regex" {
+			return r.re != nil && r.re.MatchString(subject)
+		}
+		return strings.Contains(subject, r.Pattern)
+	}
 	switch r.MatchTarget {
 	case "tool_name":
-		subject = toolName
+		return match(toolName)
 	case "tool_input":
-		subject = string(input)
+		if match(string(input)) {
+			return true
+		}
+		return len(canon) > 0 && match(string(canon))
 	default:
 		return false
 	}
-	if r.MatchType == "regex" {
-		return r.re != nil && r.re.MatchString(subject)
+}
+
+// canonicalInput decodes the tool input and re-encodes it without escaping, so
+// every \uXXXX escape (other than control characters) becomes the literal
+// character the tool will actually receive. Returns nil when the input is not
+// valid JSON or re-encodes to the same bytes.
+func canonicalInput(input []byte) []byte {
+	if len(input) == 0 {
+		return nil
 	}
-	return strings.Contains(subject, r.Pattern)
+	dec := json.NewDecoder(bytes.NewReader(input))
+	dec.UseNumber()
+	var v any
+	if err := dec.Decode(&v); err != nil {
+		return nil
+	}
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
+	enc.SetEscapeHTML(false)
+	if err := enc.Encode(v); err != nil {
+		return nil
+	}
+	out := bytes.TrimRight(buf.Bytes(), "\n")
+	if bytes.Equal(out, input) {
+		return nil
+	}
+	return out
 }
 
 func defaultMessage(action, name string) string {

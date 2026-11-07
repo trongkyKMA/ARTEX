@@ -15,9 +15,9 @@ import (
 )
 
 var (
-	ErrEvidenceConflict = errors.New("流量证据已变更，请刷新后重试")
-	ErrFindingNotFound  = errors.New("漏洞不存在")
-	ErrEvidenceNotFound = errors.New("流量证据不存在")
+	ErrEvidenceConflict = errors.New("traffic evidence has changed; refresh and try again")
+	ErrFindingNotFound  = errors.New("finding does not exist")
+	ErrEvidenceNotFound = errors.New("traffic evidence does not exist")
 )
 
 // This lock covers the evidence filesystem as well as its SQL references. All
@@ -186,7 +186,7 @@ func LockFindingEvidenceTx(tx *sql.Tx, findingID int64, version *int64) error {
 
 func InsertEvidenceSnapshotTx(tx *sql.Tx, s TrafficEvidenceSnapshot) error {
 	if s.ID != TrafficSnapshotID(s) {
-		return errors.New("证据快照元数据哈希不匹配")
+		return errors.New("evidence snapshot metadata hash mismatch")
 	}
 	// The ID was computed over the normalized form; store those same bytes.
 	id := s.ID
