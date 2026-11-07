@@ -11,6 +11,7 @@ fork keeps the upstream engine and adds:
 - **Intercept hardening** plus a built-in **operator policy**: no credential/OTP brute force, no password changes, no deletion of system files.
 - **LLM provider presets** with suggested models.
 - **Docker image built from this source** (`./docker-build.sh`).
+- **MCP adapter for Claude Code** ([adapters/agent](adapters/agent/README.md)): read tasks and findings, re-verify findings, and write triage results back (writes opt-in, dry run first).
 
 | Document | Contents |
 |---|---|

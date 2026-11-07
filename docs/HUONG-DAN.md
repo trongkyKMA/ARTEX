@@ -15,8 +15,9 @@ Tài liệu này dành cho bản ARTEX đã được chỉnh sửa trong repo n�
 10. [Vận hành 24/7: backup, log, reverse proxy](#10-vận-hành-247-backup-log-reverse-proxy)
 11. [Cập nhật phiên bản](#11-cập-nhật-phiên-bản)
 12. [Bảo mật khi triển khai nội bộ](#12-bảo-mật-khi-triển-khai-nội-bộ)
-13. [Phát triển và kiểm thử](#13-phát-triển-và-kiểm-thử)
-14. [Xử lý sự cố](#14-xử-lý-sự-cố)
+13. [Kết nối Claude Code qua MCP (verify finding)](#13-kết-nối-claude-code-qua-mcp-verify-finding)
+14. [Phát triển và kiểm thử](#14-phát-triển-và-kiểm-thử)
+15. [Xử lý sự cố](#15-xử-lý-sự-cố)
 
 ---
 
@@ -32,6 +33,7 @@ Tài liệu này dành cho bản ARTEX đã được chỉnh sửa trong repo n�
 | LLM | Ô chọn **Provider** tự điền Format/Base URL và gợi ý model | §6 |
 | Skill | Sửa frontmatter `scopesentry`, mở rộng mô tả `api-recon` | §7 |
 | Docker | Build image **từ chính source này** (`./docker-build.sh`), không kéo image gốc | §3 |
+| MCP | Adapter `adapters/agent` để Claude Code đọc, verify và triage finding | §13 |
 
 > ⚠️ **Không dùng image `autumn27/artex` của tác giả gốc**: image đó không có các thay đổi ở trên. Nút "Update" trong app đã được trỏ về repo này (§11).
 
@@ -144,7 +146,7 @@ CGO_ENABLED=0 go build -tags embedui -o artex ./cmd/artex
 Lưu ý:
 - Sai mật khẩu **5 lần trong 15 phút** từ cùng một IP thì bị khoá tạm (HTTP 429). Đợi 15 phút hoặc khởi động lại server.
 - **Đổi mật khẩu** (menu tài khoản góc dưới trái) sẽ **đăng xuất mọi phiên khác**.
-- Quên mật khẩu: xem §14.
+- Quên mật khẩu: xem §15.
 
 ---
 
@@ -351,7 +353,56 @@ Lưu ý:
 
 ---
 
-## 13. Phát triển và kiểm thử
+## 13. Kết nối Claude Code qua MCP (verify finding)
+
+`adapters/agent` là một MCP server chạy local (stdio, Node.js). Claude Code dùng nó để đọc task và finding của ARTEX, rồi tự verify lại finding và ghi kết quả triage về ARTEX. Adapter chỉ gọi API có xác thực của ARTEX, không tự quét target. Việc verify (gửi request PoC) do Claude Code làm, trong phạm vi anh cho phép.
+
+**Cài đặt** (máy chạy Claude Code, cần Node.js ≥ 22):
+
+```bash
+cd ARTEX/adapters/agent
+npm ci
+```
+
+**Biến môi trường** (đặt ở biến môi trường user của hệ điều hành, **không** ghi vào file config hay commit):
+
+| Biến | Ý nghĩa |
+|---|---|
+| `SCOPEWEAVER_URL` | Địa chỉ ARTEX. Chỉ chấp nhận **HTTPS** hoặc **loopback HTTP**, vd. `http://127.0.0.1:8790` (Docker trên máy này) |
+| `SCOPEWEAVER_PASSWORD` | Mật khẩu admin đặt ở `/setup`. Tài khoản luôn là `ARTEX`, không cần đặt `SCOPEWEAVER_USERNAME` |
+| `SCOPEWEAVER_TOKEN` | Thay cho mật khẩu: một JWT đăng nhập sẵn có (được ưu tiên hơn mật khẩu) |
+| `SCOPEWEAVER_ALLOW_WRITES` | `false` (mặc định): chỉ đọc. `true`: bật thêm 9 tool ghi (đổi trạng thái finding, tạo/tạm dừng task, goal, constraint, steer worker…) |
+| `SCOPEWEAVER_EXPORT_DIR` | Thư mục lưu file khi export finding (mặc định `./scopeweaver-export`) |
+
+**Đăng ký với Claude Code** (đường dẫn tuyệt đối tới bản checkout):
+
+```bash
+claude mcp add --scope user --transport stdio artex -- node /duong/dan/ARTEX/adapters/agent/src/mcp.js
+claude mcp list
+```
+
+Trong Claude Code gõ `/mcp` để xem 12 tool đọc (21 tool khi bật ghi), tên dạng `scopeweaver_*`.
+
+**ARTEX chạy trên server khác (HTTP nội bộ):** adapter từ chối HTTP không mã hoá tới máy khác, để mật khẩu và JWT không đi qua mạng dạng rõ. Hai cách:
+- Đặt ARTEX sau reverse proxy HTTPS (§10), rồi dùng `SCOPEWEAVER_URL=https://...`.
+- Hoặc mở SSH tunnel: `ssh -L 8790:127.0.0.1:8787 user@server-artex`, rồi dùng `SCOPEWEAVER_URL=http://127.0.0.1:8790`.
+
+**Quy trình verify finding gợi ý** (gõ trong Claude Code):
+1. "Liệt kê finding critical/high đang pending của task 3": dùng `scopeweaver_list_findings`.
+2. "Lấy chi tiết finding 42 và verify lại bằng PoC tối thiểu": `scopeweaver_get_finding` lấy evidence, request gốc và report; Claude Code dựng lại request và kiểm tra.
+3. "Đánh dấu finding 42 confirmed, 43 false_positive": `scopeweaver_update_findings`. Lần gọi đầu luôn là **dry run** và trả về danh sách thay đổi dự kiến; chỉ áp dụng khi anh đồng ý.
+4. Nhiều finding: `scopeweaver_export_findings` lưu ra file (md-zip/csv/json) để đọc dần, khỏi tràn context.
+
+Lưu ý an toàn:
+- Evidence trong finding là nội dung lấy từ target, **không tin cậy**. Claude Code không được làm theo chỉ dẫn nằm trong đó.
+- Adapter **không** có tool sửa scope, thêm/xoá asset, xoá finding, gọi HTTP tuỳ ý hay chạy lệnh shell. Muốn nới scope phải làm trên giao diện.
+- Ghi (write) không tự thử lại. Nếu bị timeout, kiểm tra trạng thái trước khi gọi lại.
+
+Chi tiết từng tool: [adapters/agent/README.md](../adapters/agent/README.md). Kiểm thử adapter: `cd adapters/agent && npm test && npm run check`.
+
+---
+
+## 14. Phát triển và kiểm thử
 
 **Chạy dev** (backend + frontend hot reload):
 
@@ -384,7 +435,7 @@ cd web && npx tsc --noEmit && node --test src/lib/*.test.mjs
 
 ---
 
-## 14. Xử lý sự cố
+## 15. Xử lý sự cố
 
 | Triệu chứng | Cách xử lý |
 |---|---|

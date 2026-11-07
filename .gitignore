@@ -63,3 +63,6 @@ Thumbs.db
 /bench/
 /Dockerfile.bench
 /Dockerfile.bench.v2
+# MCP adapter (adapters/agent)
+adapters/agent/node_modules/
+scopeweaver-export/
