@@ -77,24 +77,19 @@ Không muốn đăng nhập tài khoản cá nhân trên VPS thì dùng **deploy
 
 | Cách | Khi nào dùng | Trên VPS cần |
 |---|---|---|
-| **A. Build trên VPS** | Đơn giản nhất, luôn đúng code đang checkout | Go, Node.js, Docker |
-| **B. Image từ GHCR** | Không muốn cài Go/Node trên VPS; dùng bản đã phát hành | Docker + token `read:packages` |
+| **A. Build trên VPS** | Đơn giản nhất, luôn đúng code đang checkout | Chỉ Docker |
+| **B. Image từ GHCR** | Dùng bản đã phát hành, không build | Docker + token `read:packages` |
 | **C. Build trên laptop, chép sang** | VPS yếu hoặc không ra được Internet để tải thư viện | Docker |
 
-### A. Build trên VPS
+### A. Build trên VPS (cài một lệnh)
 
 ```bash
-# Go: tải bản ổn định MỚI NHẤT (≥ 1.26, có bản vá bảo mật) từ https://go.dev/dl/
-GO_TGZ=go1.xx.y.linux-amd64.tar.gz     # thay đúng tên file trên go.dev/dl
-curl -fsSLO https://go.dev/dl/$GO_TGZ && sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf $GO_TGZ
-echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.profile && source ~/.profile && go version
-
-# Node.js 22 LTS
-curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && sudo apt -y install nodejs
-node -v
-
-cd ~/ARTEX && ./docker-build.sh       # tạo image artex-local:latest (lần đầu 5–15 phút)
+cd ~/ARTEX && ./install.sh     # chọn 1) Full Docker install
 ```
+
+- Script tự làm các bước: tạo `.env` (§4), hỏi chế độ truy cập (chọn **1 = chỉ máy này**), build image, khởi động, rồi in **setup token** và lệnh SSH tunnel. Sau đó chuyển thẳng sang §5 phần mở `/setup`.
+- Không cần cài Go hay Node.js: nếu VPS không có, giao diện và binary được build trong container tạm. Lần đầu mất 10–20 phút, vì phải tải image node, golang và build image runtime.
+- Muốn tự làm từng bước: sửa `.env` theo §4, rồi chạy `./docker-build.sh`.
 
 ### B. Image từ GHCR
 
@@ -109,7 +104,7 @@ docker compose pull artex
 ### C. Build trên laptop rồi chép sang
 
 ```bash
-# Trên laptop (đã có Go/Node/Docker), trong thư mục repo:
+# Trên laptop (có Docker), trong thư mục repo:
 ./docker-build.sh                                   # VPS arm64 thì thêm ARTEX_ARCH=arm64
 docker save artex-local:latest | gzip | ssh artex@<vps> 'gunzip | docker load'
 ```

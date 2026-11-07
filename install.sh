@@ -30,29 +30,79 @@ ensure_docker(){
   esac
 }
 
+# Run a command that talks to Docker. Right after Docker is installed, the user's
+# new 'docker' group membership is not active in this shell yet: fall back to
+# `sg docker` (no re-login needed), then to sudo.
+dk(){
+  if docker info >/dev/null 2>&1; then "$@"
+  elif command -v sg >/dev/null 2>&1 && id -nG "$(id -un)" 2>/dev/null | grep -qw docker; then
+    sg docker -c "$(printf '%q ' "$@")"
+  else sudo "$@"; fi
+}
+
+env_get(){ grep -E "^$1=" .env 2>/dev/null | tail -1 | cut -d= -f2-; }
+env_set(){
+  if grep -qE "^$1=" .env; then sed -i.bak "s|^$1=.*|$1=$2|" .env && rm -f .env.bak
+  else printf '%s=%s\n' "$1" "$2" >> .env; fi
+}
+
 # ── ① 全部 Docker ───────────────────────────────
 install_docker(){
   ensure_docker
   if [ ! -f .env ]; then
-    cp .env.example .env 2>/dev/null || true
-    local pw key
+    cp .env.example .env
+    chmod 600 .env
+    local pw
     pw="$(ask 'Postgres password (press Enter to generate a random one)' "$(rand)")"
-    key="$(ask 'ANTHROPIC_API_KEY (may be left empty; configure later in the UI)' '')"
-    sed -i.bak "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=${pw}|" .env
-    sed -i.bak "s|^ANTHROPIC_API_KEY=.*|ANTHROPIC_API_KEY=${key}|" .env
-    rm -f .env.bak
-    ok ".env generated (POSTGRES_PASSWORD set)"
+    case "$pw" in *'|'*|*' '*) die "The password must not contain '|' or spaces" ;; esac
+    env_set POSTGRES_PASSWORD "$pw"
+    echo "Who may open the web UI (port $(env_get ARTEX_HTTP_PORT))?"
+    echo "  1) Only this machine: 127.0.0.1 (recommended for a VPS / Internet-facing server;"
+    echo "     open it through an SSH tunnel or an HTTPS reverse proxy)"
+    echo "  2) Every interface: 0.0.0.0 (only on an internal network; Docker bypasses ufw)"
+    case "$(ask 'Choose' 1)" in
+      2) env_set ARTEX_BIND 0.0.0.0 ;;
+      *) env_set ARTEX_BIND 127.0.0.1 ;;
+    esac
+    ok ".env generated (POSTGRES_PASSWORD, ARTEX_BIND=$(env_get ARTEX_BIND)); LLM keys are set later in the UI"
   else
-    info "Reusing existing .env"
+    info "Reusing existing .env (ARTEX_BIND=$(env_get ARTEX_BIND))"
   fi
-  # Build the ARTEX image from this source (the upstream image lacks this fork's changes).
+  # Build the ARTEX image from this source (prebuilt upstream images lack this
+  # fork's changes; one of them was found backdoored). Needs only Docker: Go and
+  # Node.js are used from the host when present, otherwise run in containers.
   info "Building the ARTEX image from source (./docker-build.sh)…"
-  ./docker-build.sh
+  dk ./docker-build.sh
   info "Pulling PostgreSQL and starting…"
-  docker compose pull postgres || true
-  docker compose up -d
-  ok "Started -> http://localhost:8787"
-  info "View logs: docker compose logs -f artex"
+  dk docker compose pull postgres || true
+  dk docker compose up -d
+  local port bind tok="" i
+  port="$(env_get ARTEX_HTTP_PORT)"; port="${port:-8787}"
+  bind="$(env_get ARTEX_BIND)"; bind="${bind:-0.0.0.0}"
+  info "Waiting for ARTEX to start…"
+  for i in $(seq 1 60); do
+    curl -fsS "http://127.0.0.1:${port}/api/health" >/dev/null 2>&1 && break
+    sleep 2
+  done
+  curl -fsS "http://127.0.0.1:${port}/api/health" >/dev/null 2>&1 \
+    || die "ARTEX did not answer on 127.0.0.1:${port}. Check: docker compose logs --tail 100 artex"
+  # The token file is written before the server starts listening.
+  tok="$(dk docker compose exec -T artex cat /app/keys/setup.token 2>/dev/null || true)"
+  ok "ARTEX is running."
+  if [ "$bind" = "127.0.0.1" ]; then
+    echo "  Open it from your computer through an SSH tunnel:"
+    echo "    ssh -N -L ${port}:127.0.0.1:${port} $(id -un)@<server-address>"
+    echo "  then browse http://127.0.0.1:${port}/setup"
+  else
+    echo "  Browse http://<server-address>:${port}/setup"
+  fi
+  if [ -n "$tok" ]; then
+    echo "  One-time setup token: ${tok}"
+  else
+    echo "  No setup token: the admin password is already set (fresh install? see: docker compose exec artex cat /app/keys/setup.token)"
+  fi
+  echo "  Log in afterwards as user ARTEX. Logs: docker compose logs -f artex"
+  echo "  Deployment checklist: docs/DEPLOY-VPS.md"
 }
 
 # ── ② 本地编译运行 ──────────────────────────────

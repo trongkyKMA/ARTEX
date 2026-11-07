@@ -20,14 +20,23 @@ fork keeps the upstream engine and adds:
 | [SECURITY-AND-L10N-NOTES.md](SECURITY-AND-L10N-NOTES.md) | What changed: localisation scope, fixed vulnerabilities (CVSS/CWE), dependency audit, intercept bypass fixes, tests |
 | [docs/intercept-policy-rules.md](docs/intercept-policy-rules.md) | The 11 policy intercept rules, how they are seeded, how to tune them, test matrix |
 
-Quick start (Docker, building the image from source; needs Go, Node.js and Docker):
+One-command install (only Docker needed; the installer can install Docker on Linux):
 
 ```bash
-git clone https://github.com/trongkyKMA/ARTEX.git && cd ARTEX
-cp .env.example .env        # set POSTGRES_PASSWORD
+git clone https://github.com/trongkyKMA/ARTEX.git
+cd ARTEX
+./install.sh                # choose 1) Full Docker install
+```
+
+It writes `.env` (random Postgres password, UI on 127.0.0.1 or all interfaces), builds the image
+from this source (Go/Node.js are used from the host if present, otherwise inside throwaway
+containers), starts the stack and prints the one-time setup token. Manual equivalent:
+
+```bash
+cp .env.example .env        # set POSTGRES_PASSWORD (and ARTEX_BIND=127.0.0.1 on a VPS)
 ./docker-build.sh           # build image artex-local:latest from this source
 docker compose up -d
-docker compose logs artex | grep "setup token"   # one-time token for http://<host>:8787/setup
+docker compose exec artex cat /app/keys/setup.token   # one-time token for /setup
 ```
 
 Or use the prebuilt image from a release (needs `docker login ghcr.io` with a token that has `read:packages`):

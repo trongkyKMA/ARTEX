@@ -64,8 +64,8 @@ Tài liệu này dành cho bản ARTEX đã được chỉnh sửa trong repo n�
 |---|---|
 | Hệ điều hành | Linux x86_64/arm64 (khuyến nghị). Windows/macOS dùng được cho thử nghiệm |
 | Docker + Docker Compose | Docker 24+ (cài bằng Docker) |
-| Go | **≥ 1.26, nên dùng bản vá mới nhất**: ≥ 1.27.3 nếu dùng nhánh 1.27, để có các bản vá bảo mật của `net/http`, `crypto/tls` |
-| Node.js + npm | Node ≥ 20 (để build giao diện) |
+| Go | Chỉ cần khi **chạy trực tiếp** (§4) hoặc muốn build nhanh hơn; cài bằng Docker thì không cần. **≥ 1.26, nên dùng bản vá mới nhất**: ≥ 1.27.3 nếu dùng nhánh 1.27, để có các bản vá bảo mật của `net/http`, `crypto/tls` |
+| Node.js + npm | Như Go: Node ≥ 20, chỉ cần khi chạy trực tiếp |
 | PostgreSQL | 16 (Docker tự dựng; cài trực tiếp thì tự chuẩn bị) |
 | RAM / Disk | ≥ 4 GB RAM, ≥ 20 GB disk (image có Chromium, nmap; traffic ghi lại chiếm dung lượng theo thời gian) |
 | Mạng | Ra Internet tới API LLM (DeepSeek/GLM…); tới các target nội bộ trong phạm vi được phép |
@@ -97,7 +97,14 @@ cd ARTEX
 ./install.sh          # chọn 1) All Docker
 ```
 
-Script sẽ hỏi mật khẩu Postgres (Enter để sinh ngẫu nhiên), tạo `.env`, **build image từ source** (`./docker-build.sh`) rồi chạy `docker compose up -d`.
+**Chỉ cần Docker**: script tự cài Docker nếu thiếu (Linux), không cần Go hay Node.js. Các bước script làm:
+1. Hỏi mật khẩu Postgres (Enter để sinh ngẫu nhiên).
+2. Hỏi ai được mở giao diện: **chỉ máy này** (`127.0.0.1`, mặc định, dùng cho VPS) hoặc **mọi interface** (`0.0.0.0`, chỉ dùng trong mạng nội bộ).
+3. Tạo `.env` (quyền 600).
+4. **Build image từ source** (`./docker-build.sh`) rồi chạy `docker compose up -d`.
+5. Chờ ARTEX chạy, in ra **setup token** và lệnh SSH tunnel để mở `/setup`.
+
+Vừa cài Docker xong cũng không cần đăng xuất/đăng nhập lại: script tự dùng `sg docker` hoặc `sudo`.
 
 ### Cách B: từng bước thủ công
 
@@ -111,7 +118,8 @@ docker compose up -d
 docker compose logs -f artex     # xem log, Ctrl-C để thoát
 ```
 
-- `docker-build.sh` cần **Go, Node.js và Docker trên máy build**. Có thể build ở một máy khác rồi đẩy image lên registry nội bộ:
+- `docker-build.sh` **chỉ cần Docker**. Nếu máy có sẵn Go và Node.js thì script dùng luôn (build lại nhanh hơn). Nếu không, script build giao diện và binary trong container tạm (`node:22-bookworm`, `golang:1.27-bookworm`, đổi bằng `ARTEX_NODE_IMAGE`/`ARTEX_GO_IMAGE`); cache npm và Go module nằm trong volume `artex-web-node-modules`, `artex-gomod`. Ép dùng container: `ARTEX_BUILD_IN_DOCKER=1 ./docker-build.sh`.
+- Có thể build ở một máy khác rồi đẩy image lên registry nội bộ:
   - build với `ARTEX_IMAGE=registry.noibo/artex ARTEX_TAG=v1 ./docker-build.sh`, rồi `docker push`;
   - đặt `ARTEX_IMAGE`/`ARTEX_TAG` tương ứng trong `.env` trên server.
 - Build cho ARM: `ARTEX_ARCH=arm64 ./docker-build.sh`.
