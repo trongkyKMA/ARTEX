@@ -291,6 +291,9 @@ ON CONFLICT (name) DO NOTHING`,
 	if err := d.seedPolicyInterceptRulesV6(); err != nil {
 		return fmt.Errorf("seed intercept policy rules v6: %w", err)
 	}
+	if err := d.seedBuiltinRulesV7(); err != nil {
+		return fmt.Errorf("seed builtin intercept rules v7: %w", err)
+	}
 	if err := d.seedDefaultAssetInterceptRules(); err != nil {
 		return fmt.Errorf("seed asset intercept rules: %w", err)
 	}

@@ -222,11 +222,18 @@ Ba rule mặc định của bản gốc chặn cả việc agent dọn file củ
 | `[Built-in] Delete critical system directories` | **Tắt** | Nhánh `(/|…)` khớp **mọi** đường dẫn tuyệt đối, kể cả `/tmp` |
 | `[Built-in] Destructive system commands` | **Sửa pattern** như dưới | Đoạn `rm\s+-rf\s+/` khớp cả `/tmp/...`; chỉ nên chặn đúng thư mục gốc `/` |
 
-Pattern mới cho `[Built-in] Destructive system commands`, giữ nguyên các phần mkfs, dd, fork bomb, shutdown, reboot:
+Pattern hiện tại của `[Built-in] Destructive system commands` (từ v7; giữ mkfs, dd, fork bomb, ghi đè đĩa; phần shutdown/reboot chuyển sang rule `[Built-in] Shutdown / reboot` bản thu hẹp):
 
 ```
-(?i)\b(rm\s+-rf\s+/(?:\s|\*|\\?["']|$)|mkfs|dd\s+if=|:\(\)\s*\{|shutdown|reboot|>\s*/dev/sd)
+(?i)\b(rm\s+-rf\s+/(?:\s|\*|\\?["']|$)|mkfs|dd\s+if=|:\(\)\s*\{|>\s*/dev/sd)
 ```
+
+**Migration v7, rule `[Built-in] Shutdown / reboot`:** pattern gốc `\b(?:shutdown|reboot|halt|poweroff|init\s+[06])\b` khớp chữ `shutdown` ở bất kỳ đâu. Khi chạy thật, nó chặn nhầm một vòng lặp **GET** dò endpoint có chữ "shutdown" trong danh sách. v7 thu hẹp rule này, chỉ chặn khi:
+- `shutdown`/`reboot`/`halt`/`poweroff`/`init 0|6` nằm **ở vị trí lệnh**, hoặc `systemctl reboot|poweroff|halt`;
+- lệnh đó được gọi từ code: `os.system("reboot")`, `subprocess.run(["shutdown", …])`;
+- có request **POST tới đường dẫn `/shutdown`** (vd. `/actuator/shutdown`, thực sự tắt ứng dụng). Gọi GET thì cho qua.
+
+Chỉ áp dụng khi rule còn pattern gốc. Test: `TestBuiltinShutdownRulesV7` (20 ca).
 
 Các rule mặc định khác giữ nguyên: HTTP `DELETE`, SQL `DROP`/`TRUNCATE`, Redis `FLUSHALL`, `mkfs`, `dd`, `shutdown`…
 

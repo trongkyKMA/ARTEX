@@ -147,6 +147,7 @@ Rà soát cơ chế intercept (`guard/`, `intercept/`) tìm ra các đường m�
   - Rule `rm` có thể khớp **vượt sang dòng sau** (vd. `rm -f $COOKIE_JAR` rồi dòng `curl … -o /dev/null`). Sửa: đoạn giữa không vượt qua dấu `\`.
   - Lệnh ở **đầu một dòng mới** không bị bắt, vì ký tự trước nó là `n` nên `\b` không khớp (vd. `cd /tmp` xuống dòng `rm -rf /etc/x` lọt qua). Sửa: rule `rm`, `find -delete` và SQL đổi mật khẩu được phép bắt đầu ngay sau `\n`.
   - Chỉ cập nhật khi rule còn đúng pattern trước đó. Bộ test lên 57 ca.
+- **Migration v7 (`intercept_builtin_rules_v7`, `db/policy_rules_v7.go`):** rule mặc định `[Built-in] Shutdown / reboot` và nhánh `shutdown|reboot` của `[Built-in] Destructive system commands` khớp chữ trần, nên chặn nhầm vòng lặp GET dò endpoint (`/actuator/<word>`). Giờ chỉ chặn lệnh ở vị trí lệnh, lệnh gọi từ code, và POST tới `/shutdown`. Test `TestBuiltinShutdownRulesV7`.
 - **Lưu ý khi chỉnh tay:** 2 rule mặc định `[Built-in] Recursive force delete rm -rf` và `[Built-in] Delete critical system directories` chặn rộng hơn tiêu chí 3.
   - Rule thứ hai còn mắc đúng lỗi vượt dòng ở trên. Khi chạy thật, nó chặn agent xoá file cookie tạm của chính agent.
   - v4 tắt sẵn 2 rule này. Nếu bật lại thì agent sẽ không dọn được file tạm của chính nó.
